@@ -1,0 +1,756 @@
+/* ========================================
+   Product Feed — Social Feed Card Design
+   Inspired by Doctor Courses / pimpmymoney
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ---- Layout ---- */
+.productfeed-layout {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    padding: 0 16px;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.productfeed-main {
+    flex: 1;
+    min-width: 0;
+    max-width: 680px;
+}
+
+.productfeed__list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ============================================
+   CATEGORY FILTER BAR
+   ============================================ */
+
+.pf-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    margin-bottom: 14px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
+}
+
+.pf-filter-bar__label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.pf-filter-bar__count {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+.pf-filter-bar__clear {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    background: #f3f4f6;
+}
+
+.pf-filter-bar__clear:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.pf-filter-bar__clear .material-icons {
+    font-size: 16px;
+}
+
+
+/* ============================================
+   FEED CARD
+   ============================================ */
+
+.pf-card {
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
+    transition: box-shadow 0.25s ease;
+    animation: pf-slideUp 0.4s ease both;
+}
+
+.pf-card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+}
+
+/* Stagger animation */
+.pf-card:nth-child(1) { animation-delay: 0s; }
+.pf-card:nth-child(2) { animation-delay: 0.07s; }
+.pf-card:nth-child(3) { animation-delay: 0.14s; }
+.pf-card:nth-child(4) { animation-delay: 0.21s; }
+.pf-card:nth-child(5) { animation-delay: 0.28s; }
+.pf-card:nth-child(6) { animation-delay: 0.35s; }
+.pf-card:nth-child(7) { animation-delay: 0.42s; }
+.pf-card:nth-child(8) { animation-delay: 0.49s; }
+.pf-card:nth-child(9) { animation-delay: 0.56s; }
+.pf-card:nth-child(10) { animation-delay: 0.63s; }
+
+@keyframes pf-slideUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sticky highlight */
+.pf-card--sticky {
+    border-left: 3px solid #f59e0b;
+}
+
+/* ---- Card Header ---- */
+.pf-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 0;
+}
+
+.pf-card__meta-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.pf-card__category {
+    color: #1a73e8;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: normal;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.pf-card__category:hover {
+    color: #004bb5;
+    text-decoration: underline;
+}
+
+.pf-card__dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #d1d5db;
+    flex-shrink: 0;
+}
+
+.pf-card__time {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* ---- Tags ---- */
+.pf-card__tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: normal;
+    line-height: 1;
+}
+
+.pf-card__tag--pinned {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+/* ---- Card Content ---- */
+.pf-card__content {
+    padding: 10px 18px 14px;
+}
+
+.pf-card__title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 6px;
+    line-height: 1.35;
+}
+
+.pf-card__title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.pf-card__title a:hover {
+    color: #1a73e8;
+}
+
+.pf-card__excerpt {
+    font-size: 13px;
+    color: #9ca3af;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.pf-card__excerpt * {
+    font-weight: 400 !important;
+    color: #9ca3af !important;
+    font-size: 13px !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    text-decoration: none !important;
+}
+
+.pf-card__excerpt p {
+    margin: 0;
+}
+
+/* ---- Thumbnail ---- */
+.pf-card__thumb {
+    position: relative;
+    margin: 0 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: #f3f4f6;
+    cursor: pointer;
+}
+
+.pf-card__thumb-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.pf-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.pf-card:hover .pf-card__thumb img {
+    transform: scale(1.03);
+}
+
+.pf-card__no-img {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f0f4ff, #e8ecf4);
+    color: #b0b8c9;
+}
+
+.pf-card__no-img .material-icons {
+    font-size: 48px;
+}
+
+/* Price pill on thumbnail */
+.pf-card__price-pill {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 10px;
+    padding: 5px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+/* Discount badge — top-left corner of thumbnail */
+.pf-card__discount-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #10b981;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 8px;
+    z-index: 2;
+    line-height: 1;
+}
+
+.pf-card__price-original {
+    font-size: 11px;
+    color: #9ca3af;
+    text-decoration: line-through;
+}
+
+.pf-card__price {
+    font-size: 17px;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* ---- Divider ---- */
+.pf-card__divider {
+    height: 1px;
+    background: #f3f4f6;
+    margin: 6px 18px 0;
+}
+
+/* ---- Action Bar ---- */
+.pf-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px 12px;
+    gap: 8px;
+}
+
+.pf-card__actions-left {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.pf-card__actions-right {
+    display: flex;
+    gap: 8px;
+}
+
+/* Icon action buttons (like, save, cart) */
+.pf-card__action-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-family: inherit;
+    line-height: 1;
+}
+
+.pf-card__action-btn:hover {
+    background: #f3f4f6;
+}
+
+.pf-card__action-btn svg {
+    flex-shrink: 0;
+}
+
+/* Like active state */
+.pf-card__action-btn.is-liked {
+    color: #ef4444;
+}
+
+.pf-card__action-btn.is-liked svg {
+    fill: #ef4444;
+    stroke: #ef4444;
+}
+
+/* Save active state */
+.pf-card__action-btn.is-saved {
+    color: #1a73e8;
+}
+
+.pf-card__action-btn.is-saved svg {
+    fill: #1a73e8;
+    stroke: #1a73e8;
+}
+
+/* CTA buttons */
+.pf-card__btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+    font-family: inherit;
+}
+
+.pf-card__btn svg {
+    flex-shrink: 0;
+}
+
+.pf-card__btn--outline {
+    border: 1.5px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+}
+
+.pf-card__btn--outline:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+    color: #374151;
+}
+
+.pf-card__btn--primary {
+    border: none;
+    background: #1a73e8;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(26,115,232,0.2);
+}
+
+.pf-card__btn--primary:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    color: #fff;
+}
+
+.pf-card__btn--primary:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+}
+
+
+/* ============================================
+   PAGINATION
+   ============================================ */
+
+.productfeed__loader {
+    margin: 20px 0 40px;
+}
+
+#productfeed-loadmore {
+    font-weight: 600;
+    padding: 12px 40px;
+    font-size: 15px;
+    border-radius: 10px;
+    font-family: inherit;
+}
+
+.products__pagination {
+    margin-top: 20px;
+}
+
+/* ============================================
+   TOAST
+   ============================================ */
+
+.productfeed-cart-msg {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #10b981;
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 9999;
+    animation: pf-slideIn 0.3s ease;
+    font-family: 'DM Sans', sans-serif;
+}
+
+@keyframes pf-slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.productfeed-sidebar {
+    position: sticky;
+    top: var(--pf-header-h, 80px);
+    width: 340px;
+    flex-shrink: 0;
+    height: calc(100vh - var(--pf-header-h, 80px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 10px 0 20px;
+    align-self: flex-start;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Custom scrollbar for sidebar */
+.productfeed-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.productfeed-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.productfeed-sidebar::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.productfeed-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+.pf-widget {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 8px rgba(0,0,0,0.03);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.pf-widget__header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.pf-widget__title {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.pf-widget__title .material-icons {
+    font-size: 20px;
+    color: #1a73e8;
+}
+
+.pf-widget__list {
+    padding: 6px 0;
+    transition: opacity 0.25s ease;
+}
+
+.pf-widget__list.is-loading {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* ---- Sidebar Card ---- */
+.pf-sidebar-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid #f9fafb;
+}
+
+.pf-sidebar-card:last-child {
+    border-bottom: none;
+}
+
+.pf-sidebar-card:hover {
+    background: #f8fafd;
+}
+
+.pf-sidebar-card__img {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #f3f4f6;
+}
+
+.pf-sidebar-card__img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pf-sidebar-card__no-img {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d1d5db;
+}
+
+.pf-sidebar-card__no-img .material-icons {
+    font-size: 22px;
+}
+
+.pf-sidebar-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.pf-sidebar-card__name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pf-sidebar-card:hover .pf-sidebar-card__name {
+    color: #1a73e8;
+}
+
+.pf-sidebar-card__cat {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: #9ca3af;
+}
+
+.pf-sidebar-card__price {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a73e8;
+}
+
+/* ---- Show More Button ---- */
+.pf-widget__more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-top: 1px solid #f3f4f6;
+    background: #fafbfc;
+    color: #1a73e8;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-family: inherit;
+}
+
+.pf-widget__more:hover {
+    background: #f0f4ff;
+}
+
+.pf-widget__more:active {
+    background: #e0eaff;
+}
+
+.pf-widget__more .material-icons {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.pf-widget__more.is-spinning .material-icons {
+    animation: pf-spin 0.6s linear infinite;
+}
+
+@keyframes pf-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+    .productfeed-layout {
+        gap: 24px;
+    }
+
+    .productfeed-sidebar {
+        width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .productfeed-layout {
+        flex-direction: column;
+    }
+
+    .productfeed-main {
+        max-width: 100%;
+    }
+
+    .productfeed-sidebar {
+        position: static;
+        width: 100%;
+        max-height: none;
+        overflow-y: visible;
+    }
+
+    .pf-card__actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .pf-card__actions-left {
+        justify-content: center;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 6px;
+    }
+
+    .pf-card__actions-right {
+        justify-content: center;
+        padding-top: 4px;
+    }
+
+    .pf-card__action-btn span {
+        display: none;
+    }
+
+    .pf-card__action-btn {
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pf-card__thumb {
+        margin: 0 12px;
+        border-radius: 10px;
+    }
+
+    .pf-card__header,
+    .pf-card__content,
+    .pf-card__actions {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .pf-card__divider {
+        margin-left: 14px;
+        margin-right: 14px;
+    }
+
+    .pf-card__title {
+        font-size: 16px;
+    }
+}

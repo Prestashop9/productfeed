@@ -1,0 +1,187 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+<div class="productfeed-admin">
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-header-title">
+                <i class="material-icons">rss_feed</i>
+                Product Feed Manager
+                <small class="text-muted">({{ total_products }} products)</small>
+            </h3>
+            <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="material-icons">visibility</i> View Feed
+            </a>
+        </div>
+        <div class="card-body">
+            <form method="get" action="{{ path('admin_productfeed_list') }}" class="mb-3">
+                <div class="input-group" style="max-width: 400px;">
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or reference..." value="{{ search }}">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons">search</i>
+                        </button>
+                        {% if search %}
+                        <a href="{{ path('admin_productfeed_list') }}" class="btn btn-outline-secondary">
+                            <i class="material-icons">clear</i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-hover" id="productfeed-table">
+                    <thead class="thead-default">
+                        <tr>
+                            <th style="width:50px">ID</th>
+                            <th style="width:60px">Image</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Reference</th>
+                            <th>Price</th>
+                            <th style="width:120px">Date Added</th>
+                            <th style="width:120px">Date Updated</th>
+                            <th style="width:80px" class="text-center">Active</th>
+                            <th style="width:80px" class="text-center">Sticky</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr data-id="{{ product.id_product }}">
+                            <td>{{ product.id_product }}</td>
+                            <td>
+                                {% if product.image_url %}
+                                    <img src="{{ product.image_url }}" alt="" style="width:45px;height:45px;object-fit:cover;border-radius:4px;">
+                                {% else %}
+                                    <span class="text-muted"><i class="material-icons">image</i></span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ product.product_name }}</strong></td>
+                            <td>{{ product.category_name }}</td>
+                            <td><code>{{ product.reference }}</code></td>
+                            <td>{{ product.price }}</td>
+                            <td>{{ product.product_date_add|date('M d, Y') }}</td>
+                            <td>{{ product.product_date_upd|date('M d, Y') }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm pf-toggle-btn {{ product.is_active ? 'btn-success' : 'btn-outline-secondary' }}"
+                                        data-field="is_active"
+                                        data-id="{{ product.id_product }}"
+                                        title="{{ product.is_active ? 'Active - Click to hide' : 'Hidden - Click to show' }}">
+                                    <i class="material-icons">{{ product.is_active ? 'visibility' : 'visibility_off' }}</i>
+                                </button>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm pf-toggle-btn {{ product.is_sticky ? 'btn-warning' : 'btn-outline-secondary' }}"
+                                        data-field="is_sticky"
+                                        data-id="{{ product.id_product }}"
+                                        title="{{ product.is_sticky ? 'Sticky - Click to unstick' : 'Not sticky - Click to pin' }}">
+                                    <i class="material-icons">{{ product.is_sticky ? 'push_pin' : 'outlined_flag' }}</i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-4">No products found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if total_pages > 1 %}
+            <nav class="mt-3">
+                <ul class="pagination justify-content-center">
+                    {% if current_page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: current_page - 1, search: search}) }}">
+                            <i class="material-icons">chevron_left</i>
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for p in range(max(1, current_page - 3), min(total_pages, current_page + 3)) %}
+                    <li class="page-item {{ p == current_page ? 'active' : '' }}">
+                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: p, search: search}) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if current_page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: current_page + 1, search: search}) }}">
+                            <i class="material-icons">chevron_right</i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.productfeed-admin .pf-toggle-btn {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+.productfeed-admin .pf-toggle-btn:hover {
+    transform: scale(1.1);
+}
+.productfeed-admin .pf-toggle-btn .material-icons {
+    font-size: 18px;
+}
+.productfeed-admin .table td {
+    vertical-align: middle;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleUrl = '{{ toggle_url }}';
+
+    document.querySelectorAll('.pf-toggle-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const idProduct = this.dataset.id;
+            const field = this.dataset.field;
+            const button = this;
+
+            button.disabled = true;
+
+            fetch(toggleUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: 'id_product=' + idProduct + '&field=' + field
+            })
+            .then(r => r.json())
+            .then(function(data) {
+                if (data.success) {
+                    const isOn = data.new_value === 1;
+
+                    if (field === 'is_active') {
+                        button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-success' : 'btn-outline-secondary');
+                        button.innerHTML = '<i class="material-icons">' + (isOn ? 'visibility' : 'visibility_off') + '</i>';
+                        button.title = isOn ? 'Active - Click to hide' : 'Hidden - Click to show';
+                    } else if (field === 'is_sticky') {
+                        button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-warning' : 'btn-outline-secondary');
+                        button.innerHTML = '<i class="material-icons">' + (isOn ? 'push_pin' : 'outlined_flag') + '</i>';
+                        button.title = isOn ? 'Sticky - Click to unstick' : 'Not sticky - Click to pin';
+                    }
+                }
+                button.disabled = false;
+            })
+            .catch(function() {
+                button.disabled = false;
+                alert('Error toggling. Please try again.');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

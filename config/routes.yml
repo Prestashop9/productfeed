@@ -1,0 +1,23 @@
+admin_productfeed_list:
+  path: productfeed/list
+  methods: [GET]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::indexAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'
+
+admin_productfeed_toggle:
+  path: productfeed/toggle
+  methods: [POST]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::toggleAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'
+
+admin_productfeed_update_position:
+  path: productfeed/position
+  methods: [POST]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::updatePositionAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'
