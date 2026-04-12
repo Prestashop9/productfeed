@@ -21,3 +21,27 @@ admin_productfeed_update_position:
     _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::updatePositionAction
     _legacy_controller: 'AdminProductFeed'
     _legacy_link: 'AdminProductFeed'
+
+admin_productfeed_likes:
+  path: productfeed/likes
+  methods: [GET]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::likesAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'
+
+admin_productfeed_saves:
+  path: productfeed/saves
+  methods: [GET]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::savesAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'
+
+admin_productfeed_savers:
+  path: productfeed/savers
+  methods: [GET]
+  defaults:
+    _controller: PrestaShop\Module\ProductFeed\Controller\Admin\ProductFeedAdminController::saversAction
+    _legacy_controller: 'AdminProductFeed'
+    _legacy_link: 'AdminProductFeed'

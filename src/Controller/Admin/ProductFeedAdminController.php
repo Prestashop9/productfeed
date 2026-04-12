@@ -50,6 +50,9 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             'search' => $search,
             'toggle_url' => $this->generateUrl('admin_productfeed_toggle'),
             'feed_url' => $context->link->getModuleLink('productfeed', 'feed'),
+            'products_url' => $this->generateUrl('admin_productfeed_list'),
+            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
+            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
         ]);
     }
 
@@ -75,6 +78,94 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             'success' => true,
             'new_value' => (int) $newValue,
         ]);
+    }
+
+    public function likesAction(Request $request): Response
+    {
+        $repo = new ProductFeedRepository();
+        $context = Context::getContext();
+        $idLang = (int) $context->language->id;
+        $idShop = (int) $context->shop->id;
+        $page = max(1, $request->query->getInt('page', 1));
+        $view = $request->query->get('view', 'top'); // top | recent
+
+        $totalLikes = $repo->getTotalLikes();
+        $totalProducts = $repo->getTotalLikedProducts();
+
+        if ($view === 'recent') {
+            $items = $repo->getRecentLikes($idLang, $idShop, $page, 50);
+        } else {
+            $items = $repo->getTopLikedProducts($idLang, $idShop, $page, 50);
+            foreach ($items as &$item) {
+                if (!empty($item['id_image'])) {
+                    $item['image_url'] = $context->link->getImageLink('', (string) $item['id_image'], 'small_default');
+                } else {
+                    $item['image_url'] = '';
+                }
+            }
+        }
+
+        return $this->render('@Modules/productfeed/views/templates/admin/likes.html.twig', [
+            'items' => $items,
+            'view' => $view,
+            'current_page' => $page,
+            'total_likes' => $totalLikes,
+            'total_products' => $totalProducts,
+            'products_url' => $this->generateUrl('admin_productfeed_list'),
+            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
+            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
+        ]);
+    }
+
+    public function savesAction(Request $request): Response
+    {
+        $repo = new ProductFeedRepository();
+        $context = Context::getContext();
+        $idLang = (int) $context->language->id;
+        $idShop = (int) $context->shop->id;
+        $page = max(1, $request->query->getInt('page', 1));
+        $view = $request->query->get('view', 'top'); // top | recent
+
+        $totalSaves = $repo->getTotalSaves();
+        $totalProducts = $repo->getTotalSavedProducts();
+
+        if ($view === 'recent') {
+            $items = $repo->getRecentSaves($idLang, $idShop, $page, 50);
+        } else {
+            $items = $repo->getTopSavedProducts($idLang, $idShop, $page, 50);
+            foreach ($items as &$item) {
+                if (!empty($item['id_image'])) {
+                    $item['image_url'] = $context->link->getImageLink('', (string) $item['id_image'], 'small_default');
+                } else {
+                    $item['image_url'] = '';
+                }
+            }
+        }
+
+        return $this->render('@Modules/productfeed/views/templates/admin/saves.html.twig', [
+            'items' => $items,
+            'view' => $view,
+            'current_page' => $page,
+            'total_saves' => $totalSaves,
+            'total_products' => $totalProducts,
+            'products_url' => $this->generateUrl('admin_productfeed_list'),
+            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
+            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
+        ]);
+    }
+
+    public function saversAction(Request $request): JsonResponse
+    {
+        $repo = new ProductFeedRepository();
+        $idProduct = $request->query->getInt('id_product', 0);
+
+        if ($idProduct <= 0) {
+            return new JsonResponse(['success' => false], 400);
+        }
+
+        $savers = $repo->getSaversForProduct($idProduct);
+
+        return new JsonResponse(['success' => true, 'savers' => $savers]);
     }
 
     public function updatePositionAction(Request $request): JsonResponse

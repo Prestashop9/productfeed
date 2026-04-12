@@ -39,6 +39,12 @@ class ProductFeedFeedModuleFrontController extends ModuleFrontController
             return;
         }
 
+        // Handle AJAX like/save toggle
+        if (Tools::getValue('ajax') === '1' && in_array(Tools::getValue('action'), ['like', 'save'])) {
+            $this->ajaxLikeSave($repo);
+            return;
+        }
+
         $page = max(1, (int) Tools::getValue('page', 1));
         $perPage = (int) Configuration::get('PRODUCTFEED_PER_PAGE') ?: 10;
         $sortBy = Configuration::get('PRODUCTFEED_SORT_BY') ?: 'date_add';
@@ -77,6 +83,15 @@ class ProductFeedFeedModuleFrontController extends ModuleFrontController
         // Get all categories in the feed for filter list
         $feedCategories = $repo->getFeedCategories($idLang, $idShop);
 
+        // Get customer's existing likes/saves
+        $customerLikes = [];
+        $customerSaves = [];
+        $idCustomer = (int) ($this->context->customer->id ?? 0);
+        if ($idCustomer > 0) {
+            $customerLikes = $repo->getCustomerLikes($idCustomer);
+            $customerSaves = $repo->getCustomerSaves($idCustomer);
+        }
+
         // Sidebar data: fetch pools, shuffle, take 5 each
         $popularPool = $repo->getPopularProducts($idLang, $idShop, 20);
         $bestSellingPool = $repo->getBestSellingProducts($idLang, $idShop, 20);
@@ -106,9 +121,47 @@ class ProductFeedFeedModuleFrontController extends ModuleFrontController
             'active_category_id' => $idCategory,
             'active_category_name' => $activeCategoryName,
             'feed_sort' => $feedSort,
+            'customer_likes' => $customerLikes,
+            'customer_saves' => $customerSaves,
+            'is_logged_in' => $idCustomer > 0,
         ]);
 
         $this->setTemplate('module:productfeed/views/templates/front/feed.tpl');
+    }
+
+    /**
+     * AJAX handler for like/save toggle
+     */
+    private function ajaxLikeSave(
+        \PrestaShop\Module\ProductFeed\Repository\ProductFeedRepository $repo
+    ): void {
+        $idCustomer = (int) ($this->context->customer->id ?? 0);
+        if ($idCustomer <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'login_required']);
+            exit;
+        }
+
+        $idProduct = (int) Tools::getValue('id_product', 0);
+        if ($idProduct <= 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'invalid_product']);
+            exit;
+        }
+
+        $action = Tools::getValue('action');
+
+        if ($action === 'like') {
+            $result = $repo->toggleLike($idProduct, $idCustomer);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'liked' => $result['liked'], 'total' => $result['total']]);
+        } else {
+            $result = $repo->toggleSave($idProduct, $idCustomer);
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'saved' => $result['saved'], 'total' => $result['total']]);
+        }
+
+        exit;
     }
 
     /**

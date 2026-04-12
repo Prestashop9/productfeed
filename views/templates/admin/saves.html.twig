@@ -1,0 +1,218 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+<div class="productfeed-admin">
+    {# ── Tab Navigation ── #}
+    <ul class="nav nav-pills mb-3">
+        <li class="nav-item">
+            <a class="nav-link" href="{{ products_url }}">
+                <i class="material-icons">rss_feed</i> Products
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ likes_url }}">
+                <i class="material-icons">favorite</i> Likes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link active" href="{{ saves_url }}">
+                <i class="material-icons">bookmark</i> Saves
+            </a>
+        </li>
+    </ul>
+
+    {# ── Stats Cards ── #}
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div style="font-size:32px;font-weight:800;color:#1a73e8">{{ total_saves }}</div>
+                    <div class="text-muted">Total Saves</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div style="font-size:32px;font-weight:800;color:#7c3aed">{{ total_products }}</div>
+                    <div class="text-muted">Products Saved</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div style="font-size:32px;font-weight:800;color:#10b981">
+                        {% if total_products > 0 %}{{ (total_saves / total_products)|round(1) }}{% else %}0{% endif %}
+                    </div>
+                    <div class="text-muted">Avg Saves / Product</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ── View Toggle ── #}
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-header-title">
+                <i class="material-icons" style="color:#1a73e8">bookmark</i>
+                {% if view == 'recent' %}Recent Saves{% else %}Most Saved Products{% endif %}
+            </h3>
+            <div>
+                <a href="{{ saves_url }}?view=top" class="btn btn-sm {{ view == 'top' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                    <i class="material-icons">trending_up</i> Top Saved
+                </a>
+                <a href="{{ saves_url }}?view=recent" class="btn btn-sm {{ view == 'recent' ? 'btn-primary' : 'btn-outline-secondary' }}">
+                    <i class="material-icons">schedule</i> Recent
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                {% if view == 'top' %}
+                <table class="table table-hover">
+                    <thead class="thead-default">
+                        <tr>
+                            <th style="width:50px">#</th>
+                            <th style="width:60px">Image</th>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th style="width:100px" class="text-center">Total Saves</th>
+                            <th style="width:160px">Last Saved</th>
+                            <th style="width:100px" class="text-center">Users</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i, item in items %}
+                        <tr>
+                            <td><span class="badge badge-pill {{ i < 3 ? 'badge-primary' : 'badge-secondary' }}">{{ i + 1 + (current_page - 1) * 50 }}</span></td>
+                            <td>
+                                {% if item.image_url %}
+                                    <img src="{{ item.image_url }}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:6px;">
+                                {% else %}
+                                    <span class="text-muted"><i class="material-icons">image</i></span>
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ item.product_name }}</strong></td>
+                            <td>{{ item.category_name }}</td>
+                            <td class="text-center">
+                                <span style="font-size:18px;font-weight:700;color:#1a73e8">{{ item.total_saves }}</span>
+                            </td>
+                            <td>{{ item.last_saved_at|date('M d, Y H:i') }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary pf-view-savers" data-id="{{ item.id_product }}">
+                                    <i class="material-icons" style="font-size:16px">people</i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No saves yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <table class="table table-hover">
+                    <thead class="thead-default">
+                        <tr>
+                            <th>Product</th>
+                            <th>Customer</th>
+                            <th>Email</th>
+                            <th style="width:160px">Saved At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><strong>{{ item.product_name }}</strong></td>
+                            <td>{{ item.firstname }} {{ item.lastname }}</td>
+                            <td><a href="mailto:{{ item.email }}">{{ item.email }}</a></td>
+                            <td>{{ item.date_add|date('M d, Y H:i') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">No saves yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Savers Modal ── #}
+<div class="modal fade" id="saversModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="material-icons">people</i> Users who saved this product</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body" id="saversModalBody">
+                <div class="text-center py-3"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.productfeed-admin .nav-pills .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #6b7280;
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+.productfeed-admin .nav-pills .nav-link.active {
+    background: #1a73e8;
+    color: #fff;
+}
+.productfeed-admin .nav-pills .nav-link .material-icons {
+    font-size: 18px;
+}
+.productfeed-admin .table td {
+    vertical-align: middle;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.pf-view-savers').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var idProduct = this.dataset.id;
+            var body = document.getElementById('saversModalBody');
+            body.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
+            $('#saversModal').modal('show');
+
+            fetch('{{ path("admin_productfeed_savers") }}?id_product=' + idProduct, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.savers.length) {
+                    var html = '<table class="table table-sm"><thead><tr><th>Customer</th><th>Email</th><th>Saved At</th></tr></thead><tbody>';
+                    data.savers.forEach(function(s) {
+                        html += '<tr><td>' + s.firstname + ' ' + s.lastname + '</td>'
+                            + '<td><a href="mailto:' + s.email + '">' + s.email + '</a></td>'
+                            + '<td>' + s.date_add + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+                } else {
+                    body.innerHTML = '<p class="text-center text-muted py-3">No users have saved this product.</p>';
+                }
+            })
+            .catch(function() {
+                body.innerHTML = '<p class="text-center text-danger py-3">Error loading data.</p>';
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

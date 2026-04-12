@@ -45,22 +45,85 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==============================
-    // Like & Save (local toggle)
+    // Like & Save (persisted via AJAX)
     // ==============================
+    var isLoggedIn = feed.dataset.loggedIn === '1';
+    var userLikes = (feed.dataset.likes || '').split(',').filter(Boolean);
+    var userSaves = (feed.dataset.saves || '').split(',').filter(Boolean);
+
     function bindLikeSave() {
         document.querySelectorAll('.pf-like-btn').forEach(function (btn) {
             if (btn.dataset.bound) return;
             btn.dataset.bound = '1';
+
+            // Set initial state for dynamically loaded cards
+            if (userLikes.indexOf(btn.dataset.id) !== -1) {
+                btn.classList.add('is-liked');
+            }
+
             btn.addEventListener('click', function () {
-                this.classList.toggle('is-liked');
+                if (!isLoggedIn) {
+                    toast('Please sign in to like products', true);
+                    return;
+                }
+                var button = this;
+                var pid = button.dataset.id;
+                button.disabled = true;
+
+                var url = ajaxUrl + (ajaxUrl.includes('?') ? '&' : '?')
+                    + 'ajax=1&action=like&id_product=' + pid;
+
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        button.classList.toggle('is-liked', data.liked);
+                        if (data.liked) {
+                            if (userLikes.indexOf(pid) === -1) userLikes.push(pid);
+                        } else {
+                            userLikes = userLikes.filter(function (x) { return x !== pid; });
+                        }
+                    }
+                    button.disabled = false;
+                })
+                .catch(function () { button.disabled = false; });
             });
         });
 
         document.querySelectorAll('.pf-save-btn').forEach(function (btn) {
             if (btn.dataset.bound) return;
             btn.dataset.bound = '1';
+
+            if (userSaves.indexOf(btn.dataset.id) !== -1) {
+                btn.classList.add('is-saved');
+            }
+
             btn.addEventListener('click', function () {
-                this.classList.toggle('is-saved');
+                if (!isLoggedIn) {
+                    toast('Please sign in to save products', true);
+                    return;
+                }
+                var button = this;
+                var pid = button.dataset.id;
+                button.disabled = true;
+
+                var url = ajaxUrl + (ajaxUrl.includes('?') ? '&' : '?')
+                    + 'ajax=1&action=save&id_product=' + pid;
+
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.success) {
+                        button.classList.toggle('is-saved', data.saved);
+                        if (data.saved) {
+                            if (userSaves.indexOf(pid) === -1) userSaves.push(pid);
+                        } else {
+                            userSaves = userSaves.filter(function (x) { return x !== pid; });
+                        }
+                    }
+                    button.disabled = false;
+                })
+                .catch(function () { button.disabled = false; });
             });
         });
     }
