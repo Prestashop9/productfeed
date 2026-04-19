@@ -10,9 +10,7 @@
      data-scroll-type="{$scroll_type}"
      data-current-page="{$current_page}"
      data-total-pages="{$total_pages}"
-     data-logged-in="{if $is_logged_in}1{else}0{/if}"
-     data-likes="{','|implode:$customer_likes}"
-     data-saves="{','|implode:$customer_saves}">
+>
 
     {* ===== LEFT COLUMN — Main Feed ===== *}
     <div class="productfeed-main">

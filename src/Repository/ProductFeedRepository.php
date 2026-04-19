@@ -36,6 +36,8 @@ class ProductFeedRepository
             p.date_add AS product_date_add,
             p.date_upd AS product_date_upd,
             pf.is_sticky,
+            pf.badge_text,
+            pf.badge_expires,
             pf.date_add AS feed_date_add,
             pf.date_upd AS feed_date_upd,
             cl.name AS category_name,
@@ -60,11 +62,11 @@ class ProductFeedRepository
             $query->where('p.id_category_default = ' . $idCategory);
         }
 
-        // Sort by feed mode
+        // Sort by feed mode — sticky always comes first
         if ($feedSort === 'popular') {
-            $query->orderBy('IFNULL(sale.quantity, 0) DESC, p.date_add DESC');
+            $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC, p.date_add DESC');
         } elseif ($feedSort === 'bestselling') {
-            $query->orderBy('IFNULL(sale.quantity, 0) DESC');
+            $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC');
         } else {
             $query->orderBy('pf.is_sticky DESC, pf.' . $sortBy . ' ' . $sortOrder);
         }
@@ -119,39 +121,40 @@ class ProductFeedRepository
     ): array {
         $offset = ($page - 1) * $perPage;
 
-        $query = new DbQuery();
-        $query->select('
-            pf.id_productfeed,
-            pf.id_product,
-            pf.is_sticky,
-            pf.is_active,
-            pf.position,
-            pf.date_add,
-            pf.date_upd,
-            pl.name AS product_name,
-            p.price,
-            p.reference,
-            p.date_add AS product_date_add,
-            p.date_upd AS product_date_upd,
-            cl.name AS category_name,
-            img.id_image
-        ');
-        $query->from('productfeed', 'pf');
-        $query->innerJoin('product', 'p', 'p.id_product = pf.id_product');
-        $query->innerJoin('product_shop', 'ps', 'ps.id_product = p.id_product AND ps.id_shop = ' . $idShop);
-        $query->innerJoin('product_lang', 'pl', 'pl.id_product = p.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop);
-        $query->leftJoin('category_lang', 'cl', 'cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop);
-        $query->leftJoin('image', 'img', 'img.id_product = p.id_product AND img.cover = 1');
-
+        $searchWhere = '';
         if (!empty($search)) {
             $search = pSQL($search);
-            $query->where('(pl.name LIKE \'%' . $search . '%\' OR p.reference LIKE \'%' . $search . '%\')');
+            $searchWhere = " AND (pl.name LIKE '%{$search}%' OR p.reference LIKE '%{$search}%')";
         }
 
-        $query->orderBy('pf.is_sticky DESC, pf.date_add DESC');
-        $query->limit($perPage, $offset);
+        $sql = 'SELECT
+                    pf.id_productfeed,
+                    pf.id_product,
+                    pf.is_sticky,
+                    pf.is_active,
+                    pf.badge_text,
+                    pf.badge_expires,
+                    pf.position,
+                    pf.date_add,
+                    pf.date_upd,
+                    pl.name AS product_name,
+                    p.price,
+                    p.reference,
+                    p.date_add AS product_date_add,
+                    p.date_upd AS product_date_upd,
+                    cl.name AS category_name,
+                    img.id_image
+                FROM `' . _DB_PREFIX_ . 'productfeed` pf
+                INNER JOIN `' . _DB_PREFIX_ . 'product` p ON p.id_product = pf.id_product
+                INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps ON ps.id_product = p.id_product AND ps.id_shop = ' . $idShop . '
+                INNER JOIN `' . _DB_PREFIX_ . 'product_lang` pl ON pl.id_product = p.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
+                LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop . '
+                LEFT JOIN `' . _DB_PREFIX_ . 'image` img ON img.id_product = p.id_product AND img.cover = 1
+                WHERE 1=1' . $searchWhere . '
+                ORDER BY pf.is_sticky DESC, pf.date_add DESC
+                LIMIT ' . $offset . ', ' . $perPage;
 
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query) ?: [];
+        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
     }
 
     public function getTotalProducts(int $idShop, string $search = ''): int
@@ -229,6 +232,24 @@ class ProductFeedRepository
         return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
     }
 
+    public function updateBadge(int $idProduct, string $badgeText, ?string $badgeExpires): bool
+    {
+        return (bool) Db::getInstance()->update('productfeed', [
+            'badge_text' => pSQL($badgeText),
+            'badge_expires' => $badgeExpires ? pSQL($badgeExpires) : null,
+            'date_upd' => date('Y-m-d H:i:s'),
+        ], 'id_product = ' . $idProduct);
+    }
+
+    public function removeBadge(int $idProduct): bool
+    {
+        return (bool) Db::getInstance()->update('productfeed', [
+            'badge_text' => null,
+            'badge_expires' => null,
+            'date_upd' => date('Y-m-d H:i:s'),
+        ], 'id_product = ' . $idProduct);
+    }
+
     /**
      * Get popular products — by sales quantity + recency
      */
@@ -291,258 +312,5 @@ class ProductFeedRepository
         $query->limit($limit);
 
         return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query) ?: [];
-    }
-
-    // ================================================
-    // LIKES & SAVES
-    // ================================================
-
-    /**
-     * Toggle a like — insert if not exists, delete if exists
-     * @return array{liked: bool, total: int}
-     */
-    public function toggleLike(int $idProduct, int $idCustomer): array
-    {
-        $db = Db::getInstance();
-        $exists = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_like`
-             WHERE id_product = ' . $idProduct . ' AND id_customer = ' . $idCustomer
-        );
-
-        if ($exists) {
-            $db->delete('productfeed_like', 'id_product = ' . $idProduct . ' AND id_customer = ' . $idCustomer);
-            $liked = false;
-        } else {
-            $db->insert('productfeed_like', [
-                'id_product' => $idProduct,
-                'id_customer' => $idCustomer,
-                'date_add' => date('Y-m-d H:i:s'),
-            ]);
-            $liked = true;
-        }
-
-        $total = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_like` WHERE id_product = ' . $idProduct
-        );
-
-        return ['liked' => $liked, 'total' => $total];
-    }
-
-    /**
-     * Toggle a save — insert if not exists, delete if exists
-     * @return array{saved: bool, total: int}
-     */
-    public function toggleSave(int $idProduct, int $idCustomer): array
-    {
-        $db = Db::getInstance();
-        $exists = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_save`
-             WHERE id_product = ' . $idProduct . ' AND id_customer = ' . $idCustomer
-        );
-
-        if ($exists) {
-            $db->delete('productfeed_save', 'id_product = ' . $idProduct . ' AND id_customer = ' . $idCustomer);
-            $saved = false;
-        } else {
-            $db->insert('productfeed_save', [
-                'id_product' => $idProduct,
-                'id_customer' => $idCustomer,
-                'date_add' => date('Y-m-d H:i:s'),
-            ]);
-            $saved = true;
-        }
-
-        $total = (int) $db->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_save` WHERE id_product = ' . $idProduct
-        );
-
-        return ['saved' => $saved, 'total' => $total];
-    }
-
-    /**
-     * Get all product IDs liked by a customer
-     */
-    public function getCustomerLikes(int $idCustomer): array
-    {
-        $rows = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
-            'SELECT id_product FROM `' . _DB_PREFIX_ . 'productfeed_like` WHERE id_customer = ' . $idCustomer
-        );
-
-        return $rows ? array_column($rows, 'id_product') : [];
-    }
-
-    /**
-     * Get all product IDs saved by a customer
-     */
-    public function getCustomerSaves(int $idCustomer): array
-    {
-        $rows = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
-            'SELECT id_product FROM `' . _DB_PREFIX_ . 'productfeed_save` WHERE id_customer = ' . $idCustomer
-        );
-
-        return $rows ? array_column($rows, 'id_product') : [];
-    }
-
-    // ================================================
-    // ADMIN — Likes Stats
-    // ================================================
-
-    /**
-     * Products ranked by total likes
-     */
-    public function getTopLikedProducts(int $idLang, int $idShop, int $page = 1, int $perPage = 50): array
-    {
-        $offset = ($page - 1) * $perPage;
-
-        $sql = 'SELECT
-                    l.id_product,
-                    pl.name AS product_name,
-                    cl.name AS category_name,
-                    img.id_image,
-                    COUNT(l.id_productfeed_like) AS total_likes,
-                    MAX(l.date_add) AS last_liked_at
-                FROM `' . _DB_PREFIX_ . 'productfeed_like` l
-                INNER JOIN `' . _DB_PREFIX_ . 'product_lang` pl
-                    ON pl.id_product = l.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
-                LEFT JOIN `' . _DB_PREFIX_ . 'product` p ON p.id_product = l.id_product
-                LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl
-                    ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop . '
-                LEFT JOIN `' . _DB_PREFIX_ . 'image` img ON img.id_product = l.id_product AND img.cover = 1
-                GROUP BY l.id_product
-                ORDER BY total_likes DESC, last_liked_at DESC
-                LIMIT ' . $offset . ', ' . $perPage;
-
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
-    }
-
-    /**
-     * Recent individual likes with customer info
-     */
-    public function getRecentLikes(int $idLang, int $idShop, int $page = 1, int $perPage = 50): array
-    {
-        $offset = ($page - 1) * $perPage;
-
-        $sql = 'SELECT
-                    l.id_productfeed_like,
-                    l.id_product,
-                    l.id_customer,
-                    l.date_add,
-                    pl.name AS product_name,
-                    c.firstname,
-                    c.lastname,
-                    c.email
-                FROM `' . _DB_PREFIX_ . 'productfeed_like` l
-                INNER JOIN `' . _DB_PREFIX_ . 'product_lang` pl
-                    ON pl.id_product = l.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
-                INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.id_customer = l.id_customer
-                ORDER BY l.date_add DESC
-                LIMIT ' . $offset . ', ' . $perPage;
-
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
-    }
-
-    public function getTotalLikedProducts(): int
-    {
-        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue(
-            'SELECT COUNT(DISTINCT id_product) FROM `' . _DB_PREFIX_ . 'productfeed_like`'
-        );
-    }
-
-    public function getTotalLikes(): int
-    {
-        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_like`'
-        );
-    }
-
-    // ================================================
-    // ADMIN — Saves Stats
-    // ================================================
-
-    /**
-     * Products ranked by total saves, with list of users who saved
-     */
-    public function getTopSavedProducts(int $idLang, int $idShop, int $page = 1, int $perPage = 50): array
-    {
-        $offset = ($page - 1) * $perPage;
-
-        $sql = 'SELECT
-                    s.id_product,
-                    pl.name AS product_name,
-                    cl.name AS category_name,
-                    img.id_image,
-                    COUNT(s.id_productfeed_save) AS total_saves,
-                    MAX(s.date_add) AS last_saved_at
-                FROM `' . _DB_PREFIX_ . 'productfeed_save` s
-                INNER JOIN `' . _DB_PREFIX_ . 'product_lang` pl
-                    ON pl.id_product = s.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
-                LEFT JOIN `' . _DB_PREFIX_ . 'product` p ON p.id_product = s.id_product
-                LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl
-                    ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop . '
-                LEFT JOIN `' . _DB_PREFIX_ . 'image` img ON img.id_product = s.id_product AND img.cover = 1
-                GROUP BY s.id_product
-                ORDER BY total_saves DESC, last_saved_at DESC
-                LIMIT ' . $offset . ', ' . $perPage;
-
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
-    }
-
-    /**
-     * Get users who saved a specific product
-     */
-    public function getSaversForProduct(int $idProduct): array
-    {
-        $sql = 'SELECT
-                    s.id_customer,
-                    s.date_add,
-                    c.firstname,
-                    c.lastname,
-                    c.email
-                FROM `' . _DB_PREFIX_ . 'productfeed_save` s
-                INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.id_customer = s.id_customer
-                WHERE s.id_product = ' . $idProduct . '
-                ORDER BY s.date_add DESC';
-
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
-    }
-
-    /**
-     * Recent individual saves with customer info
-     */
-    public function getRecentSaves(int $idLang, int $idShop, int $page = 1, int $perPage = 50): array
-    {
-        $offset = ($page - 1) * $perPage;
-
-        $sql = 'SELECT
-                    s.id_productfeed_save,
-                    s.id_product,
-                    s.id_customer,
-                    s.date_add,
-                    pl.name AS product_name,
-                    c.firstname,
-                    c.lastname,
-                    c.email
-                FROM `' . _DB_PREFIX_ . 'productfeed_save` s
-                INNER JOIN `' . _DB_PREFIX_ . 'product_lang` pl
-                    ON pl.id_product = s.id_product AND pl.id_lang = ' . $idLang . ' AND pl.id_shop = ' . $idShop . '
-                INNER JOIN `' . _DB_PREFIX_ . 'customer` c ON c.id_customer = s.id_customer
-                ORDER BY s.date_add DESC
-                LIMIT ' . $offset . ', ' . $perPage;
-
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
-    }
-
-    public function getTotalSavedProducts(): int
-    {
-        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue(
-            'SELECT COUNT(DISTINCT id_product) FROM `' . _DB_PREFIX_ . 'productfeed_save`'
-        );
-    }
-
-    public function getTotalSaves(): int
-    {
-        return (int) Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue(
-            'SELECT COUNT(*) FROM `' . _DB_PREFIX_ . 'productfeed_save`'
-        );
     }
 }

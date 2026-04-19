@@ -1,6 +1,6 @@
 /**
  * Product Feed — Front-office JS
- * Social feed card interactions: like, save, add to cart, infinite scroll, sidebar
+ * Social feed card interactions: add to cart, infinite scroll, sidebar
  */
 document.addEventListener('DOMContentLoaded', function () {
     var feed = document.getElementById('productfeed');
@@ -45,92 +45,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==============================
-    // Like & Save (persisted via AJAX)
-    // ==============================
-    var isLoggedIn = feed.dataset.loggedIn === '1';
-    var userLikes = (feed.dataset.likes || '').split(',').filter(Boolean);
-    var userSaves = (feed.dataset.saves || '').split(',').filter(Boolean);
-
-    function bindLikeSave() {
-        document.querySelectorAll('.pf-like-btn').forEach(function (btn) {
-            if (btn.dataset.bound) return;
-            btn.dataset.bound = '1';
-
-            // Set initial state for dynamically loaded cards
-            if (userLikes.indexOf(btn.dataset.id) !== -1) {
-                btn.classList.add('is-liked');
-            }
-
-            btn.addEventListener('click', function () {
-                if (!isLoggedIn) {
-                    toast('Please sign in to like products', true);
-                    return;
-                }
-                var button = this;
-                var pid = button.dataset.id;
-                button.disabled = true;
-
-                var url = ajaxUrl + (ajaxUrl.includes('?') ? '&' : '?')
-                    + 'ajax=1&action=like&id_product=' + pid;
-
-                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        button.classList.toggle('is-liked', data.liked);
-                        if (data.liked) {
-                            if (userLikes.indexOf(pid) === -1) userLikes.push(pid);
-                        } else {
-                            userLikes = userLikes.filter(function (x) { return x !== pid; });
-                        }
-                    }
-                    button.disabled = false;
-                })
-                .catch(function () { button.disabled = false; });
-            });
-        });
-
-        document.querySelectorAll('.pf-save-btn').forEach(function (btn) {
-            if (btn.dataset.bound) return;
-            btn.dataset.bound = '1';
-
-            if (userSaves.indexOf(btn.dataset.id) !== -1) {
-                btn.classList.add('is-saved');
-            }
-
-            btn.addEventListener('click', function () {
-                if (!isLoggedIn) {
-                    toast('Please sign in to save products', true);
-                    return;
-                }
-                var button = this;
-                var pid = button.dataset.id;
-                button.disabled = true;
-
-                var url = ajaxUrl + (ajaxUrl.includes('?') ? '&' : '?')
-                    + 'ajax=1&action=save&id_product=' + pid;
-
-                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.success) {
-                        button.classList.toggle('is-saved', data.saved);
-                        if (data.saved) {
-                            if (userSaves.indexOf(pid) === -1) userSaves.push(pid);
-                        } else {
-                            userSaves = userSaves.filter(function (x) { return x !== pid; });
-                        }
-                    }
-                    button.disabled = false;
-                })
-                .catch(function () { button.disabled = false; });
-            });
-        });
-    }
-
-    bindLikeSave();
-
-    // ==============================
     // Infinite Scroll / Load More
     // ==============================
     if (scrollType === 'infinite' && loadMoreBtn) {
@@ -165,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentPage = data.current_page;
                 feed.dataset.currentPage = currentPage;
                 bindAddToCart();
-                bindLikeSave();
+                document.dispatchEvent(new Event('productfeed:cardsLoaded'));
             }
             if (!data.has_more) {
                 if (loader) loader.style.display = 'none';
@@ -203,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
             + '<div class="pf-card__content"><h2 class="pf-card__title"><a href="' + p.url + '">' + esc(p.name) + '</a></h2>'
             + '<p class="pf-card__excerpt">' + stripHtml(p.description_short || '') + '</p></div>'
             + '<div class="pf-card__thumb"><a href="' + p.url + '" class="pf-card__thumb-link">' + img + '</a>'
+            + (p.badge_text ? '<span class="pf-card__badge">' + esc(p.badge_text) + '</span>' : '')
             + (p.discount_percent > 0 ? '<span class="pf-card__discount-badge">-' + p.discount_percent + '%</span>' : '')
             + '<div class="pf-card__price-pill">'
             + (p.original_price ? '<span class="pf-card__price-original">' + p.original_price + '</span>' : '')
@@ -210,12 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
             + '</div></div>'
             + '<div class="pf-card__divider"></div>'
             + '<div class="pf-card__actions"><div class="pf-card__actions-left">'
-            + '<button class="pf-card__action-btn pf-like-btn" data-id="' + p.id_product + '">'
-            + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>'
-            + '<span>Like</span></button>'
-            + '<button class="pf-card__action-btn pf-save-btn" data-id="' + p.id_product + '">'
-            + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
-            + '<span>Save</span></button>'
+            + '<span class="pf-hook-interaction" data-id-product="' + p.id_product + '"></span>'
             + '<button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="' + p.id_product + '" data-url="' + p.add_to_cart_url + '">'
             + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'
             + '<span>Add to Cart</span></button></div>'

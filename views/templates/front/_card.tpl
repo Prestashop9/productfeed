@@ -36,6 +36,9 @@
                 </div>
             {/if}
         </a>
+        {if $product.badge_text}
+            <span class="pf-card__badge">{$product.badge_text|escape:'html'}</span>
+        {/if}
         {if $show_price && $product.discount_percent > 0}
             <span class="pf-card__discount-badge">-{$product.discount_percent}%</span>
         {/if}
@@ -54,14 +57,7 @@
     {* ── Action bar ── *}
     <div class="pf-card__actions">
         <div class="pf-card__actions-left">
-            <button class="pf-card__action-btn pf-like-btn{if in_array($product.id_product, $customer_likes)} is-liked{/if}" data-id="{$product.id_product}" aria-label="{l s='Like' d='Modules.Productfeed.Shop'}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                <span>{l s='Like' d='Modules.Productfeed.Shop'}</span>
-            </button>
-            <button class="pf-card__action-btn pf-save-btn{if in_array($product.id_product, $customer_saves)} is-saved{/if}" data-id="{$product.id_product}" aria-label="{l s='Save' d='Modules.Productfeed.Shop'}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                <span>{l s='Save' d='Modules.Productfeed.Shop'}</span>
-            </button>
+            {hook h='displayProductFeedCardActions' id_product=$product.id_product}
             <button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="{$product.id_product}" data-url="{$product.add_to_cart_url}" aria-label="{l s='Add to Cart' d='Modules.Productfeed.Shop'}">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                 <span>{l s='Add to Cart' d='Modules.Productfeed.Shop'}</span>

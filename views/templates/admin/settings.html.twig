@@ -1,0 +1,145 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+<div class="productfeed-admin">
+    <div class="card mb-3">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="card-header-title mb-0">
+                    <i class="material-icons">rss_feed</i>
+                    Product Feed Manager
+                </h3>
+                <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="material-icons">visibility</i> View Feed
+                </a>
+            </div>
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ products_url }}">
+                        <i class="material-icons">list</i> Products
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ path('admin_productfeed_settings') }}">
+                        <i class="material-icons">settings</i> Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            {% if success_message %}
+                <div class="alert alert-success">
+                    <i class="material-icons">check_circle</i>
+                    {{ success_message }}
+                </div>
+            {% endif %}
+
+            <form method="post" action="{{ path('admin_productfeed_settings') }}">
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_PAGE_TITLE">Page title</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="PRODUCTFEED_PAGE_TITLE" name="PRODUCTFEED_PAGE_TITLE" value="{{ settings.PRODUCTFEED_PAGE_TITLE }}">
+                        <small class="form-text text-muted">The title displayed on the feed page and in the browser tab.</small>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_URL_SLUG">URL slug</label>
+                    <div class="col-sm-9">
+                        <div class="input-group" style="max-width:500px">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">{{ feed_url|replace({(settings.PRODUCTFEED_URL_SLUG): ''}) }}</span>
+                            </div>
+                            <input type="text" class="form-control" id="PRODUCTFEED_URL_SLUG" name="PRODUCTFEED_URL_SLUG" value="{{ settings.PRODUCTFEED_URL_SLUG }}">
+                        </div>
+                        <small class="form-text text-muted">Only lowercase letters, numbers, and hyphens. E.g., "feed", "blog", "posts".</small>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_PER_PAGE">Products per page</label>
+                    <div class="col-sm-9">
+                        <input type="number" class="form-control" id="PRODUCTFEED_PER_PAGE" name="PRODUCTFEED_PER_PAGE" value="{{ settings.PRODUCTFEED_PER_PAGE }}" min="1" max="100" style="max-width:120px">
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SCROLL_TYPE">Scroll type</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" id="PRODUCTFEED_SCROLL_TYPE" name="PRODUCTFEED_SCROLL_TYPE" style="max-width:250px">
+                            <option value="pagination" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'pagination' ? 'selected' : '' }}>Pagination</option>
+                            <option value="infinite" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'infinite' ? 'selected' : '' }}>Infinite Scroll</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SORT_BY">Sort by</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" id="PRODUCTFEED_SORT_BY" name="PRODUCTFEED_SORT_BY" style="max-width:250px">
+                            <option value="date_add" {{ settings.PRODUCTFEED_SORT_BY == 'date_add' ? 'selected' : '' }}>Date Added</option>
+                            <option value="date_upd" {{ settings.PRODUCTFEED_SORT_BY == 'date_upd' ? 'selected' : '' }}>Date Updated</option>
+                            <option value="position" {{ settings.PRODUCTFEED_SORT_BY == 'position' ? 'selected' : '' }}>Position</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SORT_ORDER">Sort order</label>
+                    <div class="col-sm-9">
+                        <select class="form-control" id="PRODUCTFEED_SORT_ORDER" name="PRODUCTFEED_SORT_ORDER" style="max-width:250px">
+                            <option value="DESC" {{ settings.PRODUCTFEED_SORT_ORDER == 'DESC' ? 'selected' : '' }}>Newest first</option>
+                            <option value="ASC" {{ settings.PRODUCTFEED_SORT_ORDER == 'ASC' ? 'selected' : '' }}>Oldest first</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+                <h4 class="mb-3">Display Options</h4>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3">Show category</label>
+                    <div class="col-sm-9">
+                        <div class="custom-control custom-switch">
+                            <input type="hidden" name="PRODUCTFEED_SHOW_CATEGORY" value="0">
+                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_CATEGORY" name="PRODUCTFEED_SHOW_CATEGORY" value="1" {{ settings.PRODUCTFEED_SHOW_CATEGORY ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_CATEGORY">Display category name on feed cards</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3">Show date</label>
+                    <div class="col-sm-9">
+                        <div class="custom-control custom-switch">
+                            <input type="hidden" name="PRODUCTFEED_SHOW_DATE" value="0">
+                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_DATE" name="PRODUCTFEED_SHOW_DATE" value="1" {{ settings.PRODUCTFEED_SHOW_DATE ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_DATE">Display time ago on feed cards</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="form-control-label col-sm-3">Show price</label>
+                    <div class="col-sm-9">
+                        <div class="custom-control custom-switch">
+                            <input type="hidden" name="PRODUCTFEED_SHOW_PRICE" value="0">
+                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_PRICE" name="PRODUCTFEED_SHOW_PRICE" value="1" {{ settings.PRODUCTFEED_SHOW_PRICE ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_PRICE">Display price on feed cards</label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="form-group row">
+                    <div class="col-sm-9 offset-sm-3">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="material-icons">save</i> Save Settings
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

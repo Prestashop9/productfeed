@@ -278,6 +278,24 @@
     gap: 6px;
 }
 
+/* Product badge — top-right corner of thumbnail */
+.pf-card__badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 8px;
+    z-index: 2;
+    line-height: 1;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+}
+
 /* Discount badge — top-left corner of thumbnail */
 .pf-card__discount-badge {
     position: absolute;
@@ -332,7 +350,7 @@
     gap: 8px;
 }
 
-/* Icon action buttons (like, save, cart) */
+/* Icon action buttons (cart) */
 .pf-card__action-btn {
     display: flex;
     align-items: center;
@@ -356,26 +374,6 @@
 
 .pf-card__action-btn svg {
     flex-shrink: 0;
-}
-
-/* Like active state */
-.pf-card__action-btn.is-liked {
-    color: #ef4444;
-}
-
-.pf-card__action-btn.is-liked svg {
-    fill: #ef4444;
-    stroke: #ef4444;
-}
-
-/* Save active state */
-.pf-card__action-btn.is-saved {
-    color: #1a73e8;
-}
-
-.pf-card__action-btn.is-saved svg {
-    fill: #1a73e8;
-    stroke: #1a73e8;
 }
 
 /* CTA buttons */

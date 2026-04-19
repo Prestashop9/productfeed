@@ -9,8 +9,10 @@ use Context;
 use PrestaShop\Module\ProductFeed\Repository\ProductFeedRepository;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Tools;
 
 class ProductFeedAdminController extends FrameworkBundleAdminController
 {
@@ -29,7 +31,10 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
         $total = $repo->getTotalProducts($idShop, $search);
         $totalPages = max(1, (int) ceil($total / $perPage));
 
-        // Build image URLs for each product
+        // Build image URLs and format prices
+        $locale = $context->getCurrentLocale();
+        $currencyIso = $context->currency->iso_code;
+
         foreach ($products as &$product) {
             if (!empty($product['id_image'])) {
                 $product['image_url'] = $context->link->getImageLink(
@@ -40,6 +45,11 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             } else {
                 $product['image_url'] = '';
             }
+
+            $product['formatted_price'] = $locale->formatPrice(
+                \Product::getPriceStatic((int) $product['id_product'], true),
+                $currencyIso
+            );
         }
 
         return $this->render('@Modules/productfeed/views/templates/admin/product_list.html.twig', [
@@ -49,10 +59,9 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             'total_products' => $total,
             'search' => $search,
             'toggle_url' => $this->generateUrl('admin_productfeed_toggle'),
+            'badge_url' => $this->generateUrl('admin_productfeed_badge'),
             'feed_url' => $context->link->getModuleLink('productfeed', 'feed'),
-            'products_url' => $this->generateUrl('admin_productfeed_list'),
-            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
-            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
+            'settings_url' => $this->generateUrl('admin_productfeed_settings'),
         ]);
     }
 
@@ -80,92 +89,80 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
         ]);
     }
 
-    public function likesAction(Request $request): Response
+    public function badgeAction(Request $request): JsonResponse
     {
-        $repo = new ProductFeedRepository();
-        $context = Context::getContext();
-        $idLang = (int) $context->language->id;
-        $idShop = (int) $context->shop->id;
-        $page = max(1, $request->query->getInt('page', 1));
-        $view = $request->query->get('view', 'top'); // top | recent
-
-        $totalLikes = $repo->getTotalLikes();
-        $totalProducts = $repo->getTotalLikedProducts();
-
-        if ($view === 'recent') {
-            $items = $repo->getRecentLikes($idLang, $idShop, $page, 50);
-        } else {
-            $items = $repo->getTopLikedProducts($idLang, $idShop, $page, 50);
-            foreach ($items as &$item) {
-                if (!empty($item['id_image'])) {
-                    $item['image_url'] = $context->link->getImageLink('', (string) $item['id_image'], 'small_default');
-                } else {
-                    $item['image_url'] = '';
-                }
-            }
-        }
-
-        return $this->render('@Modules/productfeed/views/templates/admin/likes.html.twig', [
-            'items' => $items,
-            'view' => $view,
-            'current_page' => $page,
-            'total_likes' => $totalLikes,
-            'total_products' => $totalProducts,
-            'products_url' => $this->generateUrl('admin_productfeed_list'),
-            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
-            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
-        ]);
-    }
-
-    public function savesAction(Request $request): Response
-    {
-        $repo = new ProductFeedRepository();
-        $context = Context::getContext();
-        $idLang = (int) $context->language->id;
-        $idShop = (int) $context->shop->id;
-        $page = max(1, $request->query->getInt('page', 1));
-        $view = $request->query->get('view', 'top'); // top | recent
-
-        $totalSaves = $repo->getTotalSaves();
-        $totalProducts = $repo->getTotalSavedProducts();
-
-        if ($view === 'recent') {
-            $items = $repo->getRecentSaves($idLang, $idShop, $page, 50);
-        } else {
-            $items = $repo->getTopSavedProducts($idLang, $idShop, $page, 50);
-            foreach ($items as &$item) {
-                if (!empty($item['id_image'])) {
-                    $item['image_url'] = $context->link->getImageLink('', (string) $item['id_image'], 'small_default');
-                } else {
-                    $item['image_url'] = '';
-                }
-            }
-        }
-
-        return $this->render('@Modules/productfeed/views/templates/admin/saves.html.twig', [
-            'items' => $items,
-            'view' => $view,
-            'current_page' => $page,
-            'total_saves' => $totalSaves,
-            'total_products' => $totalProducts,
-            'products_url' => $this->generateUrl('admin_productfeed_list'),
-            'likes_url' => $this->generateUrl('admin_productfeed_likes'),
-            'saves_url' => $this->generateUrl('admin_productfeed_saves'),
-        ]);
-    }
-
-    public function saversAction(Request $request): JsonResponse
-    {
-        $repo = new ProductFeedRepository();
-        $idProduct = $request->query->getInt('id_product', 0);
+        $idProduct = $request->request->getInt('id_product');
+        $action = $request->request->get('badge_action', 'set'); // set | remove
 
         if ($idProduct <= 0) {
-            return new JsonResponse(['success' => false], 400);
+            return new JsonResponse(['success' => false, 'message' => 'Invalid product ID'], 400);
         }
 
-        $savers = $repo->getSaversForProduct($idProduct);
+        $repo = new ProductFeedRepository();
 
-        return new JsonResponse(['success' => true, 'savers' => $savers]);
+        if ($action === 'remove') {
+            $success = $repo->removeBadge($idProduct);
+            return new JsonResponse(['success' => $success, 'badge_text' => '', 'badge_expires' => '']);
+        }
+
+        $badgeText = trim($request->request->get('badge_text', ''));
+        $badgeExpires = $request->request->get('badge_expires', '');
+
+        if (empty($badgeText)) {
+            return new JsonResponse(['success' => false, 'message' => 'Badge text is required'], 400);
+        }
+
+        $expiresDate = !empty($badgeExpires) ? $badgeExpires . ' 23:59:59' : null;
+        $success = $repo->updateBadge($idProduct, $badgeText, $expiresDate);
+
+        return new JsonResponse([
+            'success' => $success,
+            'badge_text' => $badgeText,
+            'badge_expires' => $badgeExpires,
+        ]);
+    }
+
+    public function settingsAction(Request $request): Response
+    {
+        $context = Context::getContext();
+        $successMessage = '';
+
+        if ($request->isMethod('POST')) {
+            Configuration::updateValue('PRODUCTFEED_PAGE_TITLE', $request->request->get('PRODUCTFEED_PAGE_TITLE', 'Feed'));
+
+            $slug = $request->request->get('PRODUCTFEED_URL_SLUG', 'feed');
+            $slug = Tools::str2url($slug ?: 'feed');
+            Configuration::updateValue('PRODUCTFEED_URL_SLUG', $slug);
+
+            Configuration::updateValue('PRODUCTFEED_PER_PAGE', $request->request->getInt('PRODUCTFEED_PER_PAGE', 10));
+            Configuration::updateValue('PRODUCTFEED_SCROLL_TYPE', $request->request->get('PRODUCTFEED_SCROLL_TYPE', 'pagination'));
+            Configuration::updateValue('PRODUCTFEED_SORT_BY', $request->request->get('PRODUCTFEED_SORT_BY', 'date_add'));
+            Configuration::updateValue('PRODUCTFEED_SORT_ORDER', $request->request->get('PRODUCTFEED_SORT_ORDER', 'DESC'));
+            Configuration::updateValue('PRODUCTFEED_SHOW_CATEGORY', $request->request->getInt('PRODUCTFEED_SHOW_CATEGORY', 1));
+            Configuration::updateValue('PRODUCTFEED_SHOW_DATE', $request->request->getInt('PRODUCTFEED_SHOW_DATE', 1));
+            Configuration::updateValue('PRODUCTFEED_SHOW_PRICE', $request->request->getInt('PRODUCTFEED_SHOW_PRICE', 1));
+
+            $successMessage = 'Settings saved successfully.';
+        }
+
+        $slug = Configuration::get('PRODUCTFEED_URL_SLUG') ?: 'feed';
+
+        return $this->render('@Modules/productfeed/views/templates/admin/settings.html.twig', [
+            'settings' => [
+                'PRODUCTFEED_PAGE_TITLE' => Configuration::get('PRODUCTFEED_PAGE_TITLE') ?: 'Feed',
+                'PRODUCTFEED_URL_SLUG' => $slug,
+                'PRODUCTFEED_PER_PAGE' => (int) Configuration::get('PRODUCTFEED_PER_PAGE') ?: 10,
+                'PRODUCTFEED_SCROLL_TYPE' => Configuration::get('PRODUCTFEED_SCROLL_TYPE') ?: 'pagination',
+                'PRODUCTFEED_SORT_BY' => Configuration::get('PRODUCTFEED_SORT_BY') ?: 'date_add',
+                'PRODUCTFEED_SORT_ORDER' => Configuration::get('PRODUCTFEED_SORT_ORDER') ?: 'DESC',
+                'PRODUCTFEED_SHOW_CATEGORY' => (int) Configuration::get('PRODUCTFEED_SHOW_CATEGORY'),
+                'PRODUCTFEED_SHOW_DATE' => (int) Configuration::get('PRODUCTFEED_SHOW_DATE'),
+                'PRODUCTFEED_SHOW_PRICE' => (int) Configuration::get('PRODUCTFEED_SHOW_PRICE'),
+            ],
+            'feed_url' => $context->shop->getBaseURL(true) . $slug,
+            'products_url' => $this->generateUrl('admin_productfeed_list'),
+            'success_message' => $successMessage,
+        ]);
     }
 
     public function updatePositionAction(Request $request): JsonResponse

@@ -2,35 +2,30 @@
 
 {% block content %}
 <div class="productfeed-admin">
-    {# ── Tab Navigation ── #}
-    <ul class="nav nav-pills mb-3">
-        <li class="nav-item">
-            <a class="nav-link active" href="{{ products_url }}">
-                <i class="material-icons">rss_feed</i> Products
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ likes_url }}">
-                <i class="material-icons">favorite</i> Likes
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{{ saves_url }}">
-                <i class="material-icons">bookmark</i> Saves
-            </a>
-        </li>
-    </ul>
-
     <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-header-title">
-                <i class="material-icons">rss_feed</i>
-                Product Feed Manager
-                <small class="text-muted">({{ total_products }} products)</small>
-            </h3>
-            <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                <i class="material-icons">visibility</i> View Feed
-            </a>
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h3 class="card-header-title mb-0">
+                    <i class="material-icons">rss_feed</i>
+                    Product Feed Manager
+                </h3>
+                <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                    <i class="material-icons">visibility</i> View Feed
+                </a>
+            </div>
+            <ul class="nav nav-tabs card-header-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ path('admin_productfeed_list') }}">
+                        <i class="material-icons">list</i> Products
+                        <span class="badge badge-secondary ml-1">{{ total_products }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ settings_url }}">
+                        <i class="material-icons">settings</i> Settings
+                    </a>
+                </li>
+            </ul>
         </div>
         <div class="card-body">
             <form method="get" action="{{ path('admin_productfeed_list') }}" class="mb-3">
@@ -57,12 +52,10 @@
                             <th style="width:60px">Image</th>
                             <th>Product Name</th>
                             <th>Category</th>
-                            <th>Reference</th>
                             <th>Price</th>
-                            <th style="width:120px">Date Added</th>
-                            <th style="width:120px">Date Updated</th>
-                            <th style="width:80px" class="text-center">Active</th>
-                            <th style="width:80px" class="text-center">Sticky</th>
+                            <th>Created</th>
+                            <th>Updated</th>
+                            <th class="text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -78,30 +71,38 @@
                             </td>
                             <td><strong>{{ product.product_name }}</strong></td>
                             <td>{{ product.category_name }}</td>
-                            <td><code>{{ product.reference }}</code></td>
-                            <td>{{ product.price }}</td>
-                            <td>{{ product.product_date_add|date('M d, Y') }}</td>
-                            <td>{{ product.product_date_upd|date('M d, Y') }}</td>
+                            <td>{{ product.formatted_price }}</td>
+                            <td><small class="text-muted">{{ product.product_date_add|date('Y-m-d') }}</small></td>
+                            <td><small class="text-muted">{{ product.product_date_upd|date('Y-m-d') }}</small></td>
                             <td class="text-center">
-                                <button class="btn btn-sm pf-toggle-btn {{ product.is_active ? 'btn-success' : 'btn-outline-secondary' }}"
-                                        data-field="is_active"
-                                        data-id="{{ product.id_product }}"
-                                        title="{{ product.is_active ? 'Active - Click to hide' : 'Hidden - Click to show' }}">
-                                    <i class="material-icons">{{ product.is_active ? 'visibility' : 'visibility_off' }}</i>
-                                </button>
-                            </td>
-                            <td class="text-center">
-                                <button class="btn btn-sm pf-toggle-btn {{ product.is_sticky ? 'btn-warning' : 'btn-outline-secondary' }}"
-                                        data-field="is_sticky"
-                                        data-id="{{ product.id_product }}"
-                                        title="{{ product.is_sticky ? 'Sticky - Click to unstick' : 'Not sticky - Click to pin' }}">
-                                    <i class="material-icons">{{ product.is_sticky ? 'push_pin' : 'outlined_flag' }}</i>
-                                </button>
+                                <div class="pf-actions-group">
+                                    <button class="btn btn-sm pf-toggle-btn {{ product.is_active ? 'btn-success' : 'btn-outline-secondary' }}"
+                                            data-field="is_active"
+                                            data-id="{{ product.id_product }}"
+                                            title="{{ product.is_active ? 'Active' : 'Hidden' }}">
+                                        <i class="material-icons">{{ product.is_active ? 'visibility' : 'visibility_off' }}</i>
+                                    </button>
+                                    <button class="btn btn-sm pf-toggle-btn {{ product.is_sticky ? 'btn-warning' : 'btn-outline-secondary' }}"
+                                            data-field="is_sticky"
+                                            data-id="{{ product.id_product }}"
+                                            title="{{ product.is_sticky ? 'Pinned' : 'Not pinned' }}">
+                                        <i class="material-icons">{{ product.is_sticky ? 'push_pin' : 'outlined_flag' }}</i>
+                                    </button>
+                                    <div class="pf-badge-wrap">
+                                        <button class="btn btn-sm pf-toggle-btn pf-badge-trigger {{ product.badge_text ? 'btn-info' : 'btn-outline-secondary' }}"
+                                                data-id="{{ product.id_product }}"
+                                                data-badge-text="{{ product.badge_text|default('')|e('html_attr') }}"
+                                                data-badge-expires="{{ product.badge_expires ? product.badge_expires|date('Y-m-d') : '' }}"
+                                                title="{{ product.badge_text ? product.badge_text : 'No badge' }}">
+                                            <i class="material-icons">{{ product.badge_text ? 'label' : 'label_off' }}</i>
+                                        </button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="10" class="text-center text-muted py-4">No products found.</td>
+                            <td colspan="8" class="text-center text-muted py-4">No products found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -139,66 +140,233 @@
     </div>
 </div>
 
+{# Badge popup (single instance, repositioned on click) #}
+<div class="pf-badge-popup" id="pf-badge-popup" style="display:none;">
+    <div class="pf-badge-popup__header">
+        <strong>Set Badge</strong>
+        <button type="button" class="pf-badge-popup__close" id="pf-badge-close">&times;</button>
+    </div>
+    <div class="pf-badge-popup__presets">
+        <button type="button" class="pf-badge-preset" data-text="New Content">New Content</button>
+        <button type="button" class="pf-badge-preset" data-text="New">New</button>
+        <button type="button" class="pf-badge-preset" data-text="Hot">Hot</button>
+        <button type="button" class="pf-badge-preset" data-text="Sale">Sale</button>
+        <button type="button" class="pf-badge-preset" data-text="Discount">Discount</button>
+        <button type="button" class="pf-badge-preset" data-text="Limited">Limited</button>
+        <button type="button" class="pf-badge-preset" data-text="Trending">Trending</button>
+    </div>
+    <div class="pf-badge-popup__form">
+        <input type="text" id="pf-badge-text" class="form-control form-control-sm" placeholder="Custom text..." maxlength="50">
+        <div class="pf-badge-popup__expiry">
+            <label><small>Expires</small></label>
+            <div class="d-flex align-items-center gap-2">
+                <input type="date" id="pf-badge-expires" class="form-control form-control-sm">
+                <label class="pf-badge-lifetime mb-0">
+                    <input type="checkbox" id="pf-badge-lifetime"> <small>Lifetime</small>
+                </label>
+            </div>
+        </div>
+        <div class="pf-badge-popup__actions">
+            <button type="button" class="btn btn-sm btn-primary" id="pf-badge-save">Apply</button>
+            <button type="button" class="btn btn-sm btn-outline-danger" id="pf-badge-remove">Remove</button>
+        </div>
+    </div>
+</div>
+
 <style>
-.productfeed-admin .pf-toggle-btn {
-    width: 36px;
-    height: 36px;
-    padding: 4px;
-    border-radius: 50%;
-    transition: all 0.2s ease;
+.productfeed-admin .table td { vertical-align: middle; }
+.pf-actions-group { display: inline-flex; gap: 4px; align-items: center; }
+.pf-toggle-btn { width: 34px; height: 34px; padding: 4px; border-radius: 50%; transition: all 0.2s ease; }
+.pf-toggle-btn:hover { transform: scale(1.1); }
+.pf-toggle-btn .material-icons { font-size: 18px; }
+.pf-badge-wrap { position: relative; }
+
+/* Badge popup */
+.pf-badge-popup {
+    position: fixed;
+    z-index: 10000;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    width: 280px;
+    padding: 0;
+    overflow: hidden;
 }
-.productfeed-admin .pf-toggle-btn:hover {
-    transform: scale(1.1);
+.pf-badge-popup__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #f8f9fa;
 }
-.productfeed-admin .pf-toggle-btn .material-icons {
-    font-size: 18px;
+.pf-badge-popup__close {
+    border: none; background: none; font-size: 20px; cursor: pointer; color: #999; line-height: 1;
 }
-.productfeed-admin .table td {
-    vertical-align: middle;
+.pf-badge-popup__presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 14px 8px;
 }
+.pf-badge-preset {
+    padding: 4px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.pf-badge-preset:hover, .pf-badge-preset.active {
+    background: #25b9d7;
+    color: #fff;
+    border-color: #25b9d7;
+}
+.pf-badge-popup__form {
+    padding: 8px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pf-badge-popup__expiry label { margin-bottom: 2px; color: #666; }
+.pf-badge-popup__expiry .gap-2 { gap: 8px; }
+.pf-badge-lifetime { white-space: nowrap; cursor: pointer; }
+.pf-badge-popup__actions { display: flex; gap: 8px; margin-top: 4px; }
+.pf-badge-popup__actions .btn { flex: 1; }
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const toggleUrl = '{{ toggle_url }}';
+    var toggleUrl = '{{ toggle_url }}';
+    var badgeUrl = '{{ badge_url }}';
+    var popup = document.getElementById('pf-badge-popup');
+    var badgeText = document.getElementById('pf-badge-text');
+    var badgeExpires = document.getElementById('pf-badge-expires');
+    var badgeLifetime = document.getElementById('pf-badge-lifetime');
+    var currentBadgeTrigger = null;
 
-    document.querySelectorAll('.pf-toggle-btn').forEach(function(btn) {
+    // Toggle buttons (active / sticky)
+    document.querySelectorAll('.pf-toggle-btn:not(.pf-badge-trigger)').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            const idProduct = this.dataset.id;
-            const field = this.dataset.field;
-            const button = this;
-
+            var button = this;
             button.disabled = true;
-
             fetch(toggleUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: 'id_product=' + idProduct + '&field=' + field
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: 'id_product=' + button.dataset.id + '&field=' + button.dataset.field
             })
-            .then(r => r.json())
+            .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
-                    const isOn = data.new_value === 1;
-
-                    if (field === 'is_active') {
+                    var isOn = data.new_value === 1;
+                    var f = button.dataset.field;
+                    if (f === 'is_active') {
                         button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-success' : 'btn-outline-secondary');
                         button.innerHTML = '<i class="material-icons">' + (isOn ? 'visibility' : 'visibility_off') + '</i>';
-                        button.title = isOn ? 'Active - Click to hide' : 'Hidden - Click to show';
-                    } else if (field === 'is_sticky') {
+                        button.title = isOn ? 'Active' : 'Hidden';
+                    } else if (f === 'is_sticky') {
                         button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-warning' : 'btn-outline-secondary');
                         button.innerHTML = '<i class="material-icons">' + (isOn ? 'push_pin' : 'outlined_flag') + '</i>';
-                        button.title = isOn ? 'Sticky - Click to unstick' : 'Not sticky - Click to pin';
+                        button.title = isOn ? 'Pinned' : 'Not pinned';
                     }
                 }
                 button.disabled = false;
             })
-            .catch(function() {
-                button.disabled = false;
-                alert('Error toggling. Please try again.');
+            .catch(function() { button.disabled = false; });
+        });
+    });
+
+    // Badge popup — open
+    document.querySelectorAll('.pf-badge-trigger').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            currentBadgeTrigger = this;
+            var rect = this.getBoundingClientRect();
+            popup.style.top = (rect.bottom + 6) + 'px';
+            popup.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+            popup.style.display = 'block';
+
+            badgeText.value = this.dataset.badgeText || '';
+            badgeExpires.value = this.dataset.badgeExpires || '';
+            badgeLifetime.checked = !this.dataset.badgeExpires && !!this.dataset.badgeText;
+            badgeExpires.disabled = badgeLifetime.checked;
+
+            // Highlight matching preset
+            document.querySelectorAll('.pf-badge-preset').forEach(function(p) {
+                p.classList.toggle('active', p.dataset.text === badgeText.value);
             });
+        });
+    });
+
+    // Badge popup — close
+    document.getElementById('pf-badge-close').addEventListener('click', function() { popup.style.display = 'none'; });
+    document.addEventListener('click', function(e) {
+        if (!popup.contains(e.target) && !e.target.closest('.pf-badge-trigger')) popup.style.display = 'none';
+    });
+
+    // Presets
+    document.querySelectorAll('.pf-badge-preset').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            badgeText.value = this.dataset.text;
+            document.querySelectorAll('.pf-badge-preset').forEach(function(p) { p.classList.remove('active'); });
+            this.classList.add('active');
+        });
+    });
+
+    // Lifetime checkbox
+    badgeLifetime.addEventListener('change', function() {
+        badgeExpires.disabled = this.checked;
+        if (this.checked) badgeExpires.value = '';
+    });
+
+    // Save badge
+    document.getElementById('pf-badge-save').addEventListener('click', function() {
+        if (!currentBadgeTrigger || !badgeText.value.trim()) return;
+        var id = currentBadgeTrigger.dataset.id;
+        var body = 'id_product=' + id + '&badge_action=set&badge_text=' + encodeURIComponent(badgeText.value.trim());
+        if (badgeExpires.value) body += '&badge_expires=' + badgeExpires.value;
+
+        fetch(badgeUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: body
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                currentBadgeTrigger.dataset.badgeText = data.badge_text;
+                currentBadgeTrigger.dataset.badgeExpires = data.badge_expires;
+                currentBadgeTrigger.className = 'btn btn-sm pf-toggle-btn pf-badge-trigger btn-info';
+                currentBadgeTrigger.innerHTML = '<i class="material-icons">label</i>';
+                currentBadgeTrigger.title = data.badge_text;
+                popup.style.display = 'none';
+            }
+        });
+    });
+
+    // Remove badge
+    document.getElementById('pf-badge-remove').addEventListener('click', function() {
+        if (!currentBadgeTrigger) return;
+        var id = currentBadgeTrigger.dataset.id;
+
+        fetch(badgeUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: 'id_product=' + id + '&badge_action=remove'
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                currentBadgeTrigger.dataset.badgeText = '';
+                currentBadgeTrigger.dataset.badgeExpires = '';
+                currentBadgeTrigger.className = 'btn btn-sm pf-toggle-btn pf-badge-trigger btn-outline-secondary';
+                currentBadgeTrigger.innerHTML = '<i class="material-icons">label_off</i>';
+                currentBadgeTrigger.title = 'No badge';
+                popup.style.display = 'none';
+            }
         });
     });
 });
