@@ -141,6 +141,8 @@ class ProductFeedFeedModuleFrontController extends ModuleFrontController
     private function enrichProducts(array $products): array
     {
         $idLang = (int) $this->context->language->id;
+        $purchasedIds = $this->getCustomerPurchasedProductIds();
+        $libraryUrl = $this->getLibraryUrl();
         $enriched = [];
 
         foreach ($products as $product) {
@@ -202,14 +204,54 @@ class ProductFeedFeedModuleFrontController extends ModuleFrontController
                 'discount_percent' => $discountPercent,
                 'is_sticky' => (bool) $product['is_sticky'],
                 'badge_text' => $this->getActiveBadge($product),
-                'date_add' => $product['product_date_add'],
+                // Time-ago reflects feed freshness (pushed_at), not product creation
+                'date_add' => !empty($product['pushed_at']) ? $product['pushed_at'] : $product['product_date_add'],
                 'date_upd' => $product['product_date_upd'],
                 'add_to_cart_url' => $addToCartUrl,
                 'buy_now_url' => $buyNowUrl,
+                'is_purchased' => in_array($idProduct, $purchasedIds, true),
+                'library_url' => $libraryUrl,
             ];
         }
 
         return $enriched;
+    }
+
+    /**
+     * Resolve the customer library URL. Uses the digitalaccess module's friendly route when installed
+     * (auto-detects DIGITALACCESS_FRIENDLY_URL config — defaults to "mylibrary"). Falls back to /mylibrary otherwise.
+     */
+    private function getLibraryUrl(): string
+    {
+        if (Module::isInstalled('digitalaccess') && Module::isEnabled('digitalaccess')) {
+            return $this->context->link->getModuleLink('digitalaccess', 'dashboard');
+        }
+
+        $slug = Configuration::get('DIGITALACCESS_FRIENDLY_URL') ?: 'mylibrary';
+
+        return $this->context->link->getBaseLink() . ltrim($slug, '/');
+    }
+
+    /**
+     * Return product IDs the current customer has purchased (non-cancelled/refunded/payment-error orders).
+     * Empty array if guest.
+     */
+    private function getCustomerPurchasedProductIds(): array
+    {
+        $idCustomer = (int) $this->context->customer->id;
+        if ($idCustomer <= 0) {
+            return [];
+        }
+
+        $sql = 'SELECT DISTINCT od.product_id
+                FROM `' . _DB_PREFIX_ . 'order_detail` od
+                INNER JOIN `' . _DB_PREFIX_ . 'orders` o ON o.id_order = od.id_order
+                WHERE o.id_customer = ' . $idCustomer . '
+                AND o.current_state NOT IN (6, 7, 8)';
+
+        $rows = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+
+        return $rows ? array_map('intval', array_column($rows, 'product_id')) : [];
     }
 
     /**

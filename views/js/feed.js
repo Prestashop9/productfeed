@@ -100,6 +100,15 @@ document.addEventListener('DOMContentLoaded', function () {
         var stickyClass = p.is_sticky ? ' pf-card--sticky' : '';
         var stickyTag = p.is_sticky
             ? '<span class="pf-card__tag pf-card__tag--pinned">Pinned</span>' : '';
+        var badgeTag = p.badge_text
+            ? '<span class="pf-card__badge">'
+                + '<svg class="pf-card__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+                + '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>'
+                + '<span class="pf-card__badge-text">' + esc(p.badge_text) + '</span>'
+              + '</span>'
+            : '';
+        var metaRight = (badgeTag || stickyTag)
+            ? '<div class="pf-card__meta-right">' + badgeTag + stickyTag + '</div>' : '';
 
         var img = p.image_url
             ? '<img src="' + p.image_url + '" alt="' + esc(p.name) + '" loading="lazy">'
@@ -113,11 +122,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return '<article class="pf-card' + stickyClass + '" data-id="' + p.id_product + '">'
             + '<div class="pf-card__header"><div class="pf-card__meta-left">' + cat
-            + '<time class="pf-card__time">' + timeAgo + '</time></div>' + stickyTag + '</div>'
+            + '<time class="pf-card__time">' + timeAgo + '</time></div>' + metaRight + '</div>'
             + '<div class="pf-card__content"><h2 class="pf-card__title"><a href="' + p.url + '">' + esc(p.name) + '</a></h2>'
             + '<p class="pf-card__excerpt">' + stripHtml(p.description_short || '') + '</p></div>'
             + '<div class="pf-card__thumb"><a href="' + p.url + '" class="pf-card__thumb-link">' + img + '</a>'
-            + (p.badge_text ? '<span class="pf-card__badge">' + esc(p.badge_text) + '</span>' : '')
             + (p.discount_percent > 0 ? '<span class="pf-card__discount-badge">-' + p.discount_percent + '%</span>' : '')
             + '<div class="pf-card__price-pill">'
             + (p.original_price ? '<span class="pf-card__price-original">' + p.original_price + '</span>' : '')
@@ -125,13 +133,18 @@ document.addEventListener('DOMContentLoaded', function () {
             + '</div></div>'
             + '<div class="pf-card__divider"></div>'
             + '<div class="pf-card__actions"><div class="pf-card__actions-left">'
-            + '<span class="pf-hook-interaction" data-id-product="' + p.id_product + '"></span>'
-            + '<button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="' + p.id_product + '" data-url="' + p.add_to_cart_url + '">'
-            + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'
-            + '<span>Add to Cart</span></button></div>'
+            + '<span class="pf-hook-interaction" data-id-product="' + p.id_product + '" data-purchased="' + (p.is_purchased ? '1' : '0') + '"></span>'
+            + (p.is_purchased
+                ? ''
+                : '<button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="' + p.id_product + '" data-url="' + p.add_to_cart_url + '">'
+                    + '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>'
+                    + '<span>Add to Cart</span></button>')
+            + '</div>'
             + '<div class="pf-card__actions-right">'
             + '<a href="' + p.url + '" class="pf-card__btn pf-card__btn--outline"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Read More</a>'
-            + '<a href="' + p.buy_now_url + '" class="pf-card__btn pf-card__btn--primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Buy Now</a>'
+            + (p.is_purchased
+                ? '<a href="' + (p.library_url || '/mylibrary') + '" class="pf-card__btn pf-card__btn--library"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg> My Library</a>'
+                : '<a href="' + p.buy_now_url + '" class="pf-card__btn pf-card__btn--primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Buy Now</a>')
             + '</div></div></article>';
     }
 

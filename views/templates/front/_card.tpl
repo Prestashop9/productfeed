@@ -12,9 +12,19 @@
                       data-timestamp="{$product.date_add|escape:'html'}"></time>
             {/if}
         </div>
-        {if $product.is_sticky}
-            <span class="pf-card__tag pf-card__tag--pinned">{l s='Pinned' d='Modules.Productfeed.Shop'}</span>
-        {/if}
+        <div class="pf-card__meta-right">
+            {if $product.badge_text}
+                <span class="pf-card__badge">
+                    <svg class="pf-card__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>
+                    </svg>
+                    <span class="pf-card__badge-text">{$product.badge_text|escape:'html'}</span>
+                </span>
+            {/if}
+            {if $product.is_sticky}
+                <span class="pf-card__tag pf-card__tag--pinned">{l s='Pinned' d='Modules.Productfeed.Shop'}</span>
+            {/if}
+        </div>
     </div>
 
     {* ── Title & description ── *}
@@ -36,9 +46,6 @@
                 </div>
             {/if}
         </a>
-        {if $product.badge_text}
-            <span class="pf-card__badge">{$product.badge_text|escape:'html'}</span>
-        {/if}
         {if $show_price && $product.discount_percent > 0}
             <span class="pf-card__discount-badge">-{$product.discount_percent}%</span>
         {/if}
@@ -57,21 +64,30 @@
     {* ── Action bar ── *}
     <div class="pf-card__actions">
         <div class="pf-card__actions-left">
-            {hook h='displayProductFeedCardActions' id_product=$product.id_product}
-            <button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="{$product.id_product}" data-url="{$product.add_to_cart_url}" aria-label="{l s='Add to Cart' d='Modules.Productfeed.Shop'}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span>{l s='Add to Cart' d='Modules.Productfeed.Shop'}</span>
-            </button>
+            {hook h='displayProductFeedCardActions' id_product=$product.id_product is_purchased=$product.is_purchased}
+            {if !$product.is_purchased}
+                <button class="pf-card__action-btn productfeed-add-to-cart" data-id-product="{$product.id_product}" data-url="{$product.add_to_cart_url}" aria-label="{l s='Add to Cart' d='Modules.Productfeed.Shop'}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <span>{l s='Add to Cart' d='Modules.Productfeed.Shop'}</span>
+                </button>
+            {/if}
         </div>
         <div class="pf-card__actions-right">
             <a href="{$product.url}" class="pf-card__btn pf-card__btn--outline">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 {l s='Read More' d='Modules.Productfeed.Shop'}
             </a>
-            <a href="{$product.buy_now_url}" class="pf-card__btn pf-card__btn--primary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                {l s='Buy Now' d='Modules.Productfeed.Shop'}
-            </a>
+            {if $product.is_purchased}
+                <a href="{$product.library_url}" class="pf-card__btn pf-card__btn--library">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                    {l s='My Library' d='Modules.Productfeed.Shop'}
+                </a>
+            {else}
+                <a href="{$product.buy_now_url}" class="pf-card__btn pf-card__btn--primary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    {l s='Buy Now' d='Modules.Productfeed.Shop'}
+                </a>
+            {/if}
         </div>
     </div>
 </article>

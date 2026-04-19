@@ -1,145 +1,321 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
 {% block content %}
-<div class="productfeed-admin">
-    <div class="card mb-3">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h3 class="card-header-title mb-0">
-                    <i class="material-icons">rss_feed</i>
-                    Product Feed Manager
-                </h3>
-                <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                    <i class="material-icons">visibility</i> View Feed
+<link rel="stylesheet" href="{{ cdd_css_url }}">
+<script src="{{ cdd_js_url }}"></script>
+<div class="pf-dash">
+    <div class="pf-card">
+
+        {# ============ HEADER (shared with products page) ============ #}
+        <div class="pf-head">
+            <div class="pf-head__left">
+                <div class="pf-brand">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 11a9 9 0 0 1 9 9"/>
+                        <path d="M4 4a16 16 0 0 1 16 16"/>
+                        <circle cx="5" cy="19" r="1"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="pf-title">
+                        <span class="pf-title__main">{{ feed_name }}</span>
+                        <em class="pf-title__accent">manager</em>
+                    </h1>
+                    <div class="pf-status">
+                        <span class="pf-live-dot"></span>
+                        Feed live at <code>/{{ feed_slug }}</code>
+                        <span class="pf-sep">·</span>
+                        {{ total_products }} products
+                        <span class="pf-sep">·</span>
+                        Last push {{ last_push_ago }}
+                    </div>
+                </div>
+            </div>
+            <div class="pf-head__right">
+                <button type="button" class="pf-btn pf-btn--ghost" disabled>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                </button>
+                <a href="{{ feed_url }}" target="_blank" class="pf-btn pf-btn--dark">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View feed
                 </a>
             </div>
-            <ul class="nav nav-tabs card-header-tabs">
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ products_url }}">
-                        <i class="material-icons">list</i> Products
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ path('admin_productfeed_settings') }}">
-                        <i class="material-icons">settings</i> Settings
-                    </a>
-                </li>
-            </ul>
         </div>
-        <div class="card-body">
-            {% if success_message %}
-                <div class="alert alert-success">
-                    <i class="material-icons">check_circle</i>
-                    {{ success_message }}
-                </div>
-            {% endif %}
 
-            <form method="post" action="{{ path('admin_productfeed_settings') }}">
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_PAGE_TITLE">Page title</label>
-                    <div class="col-sm-9">
-                        <input type="text" class="form-control" id="PRODUCTFEED_PAGE_TITLE" name="PRODUCTFEED_PAGE_TITLE" value="{{ settings.PRODUCTFEED_PAGE_TITLE }}">
-                        <small class="form-text text-muted">The title displayed on the feed page and in the browser tab.</small>
+        {# ============ TABS ============ #}
+        <div class="pf-tabs">
+            <a href="{{ products_url }}" class="pf-tab">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Products <span class="pf-tab__count">{{ total_products }}</span>
+            </a>
+            <a href="{{ path('admin_productfeed_settings') }}" class="pf-tab pf-tab--active">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+            </a>
+        </div>
+
+        {# ============ SETTINGS BODY ============ #}
+        {% if success_message %}
+        <div class="pf-toast">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ success_message }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ path('admin_productfeed_settings') }}" id="pf-settings-form">
+        <div class="pf-settings pf-settings--single">
+            {# --- Content --- #}
+            <div class="pf-settings__body">
+
+                {# ===== General ===== #}
+                <section id="sec-general" class="pf-sec">
+                    <h2 class="pf-sec__title">General</h2>
+                    <p class="pf-sec__sub">Basic information about this feed.</p>
+
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_PAGE_TITLE">Feed name</label>
+                            <small>Shown in page title, browser tab, breadcrumb and admin menu.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <input type="text" class="pf-input" id="PRODUCTFEED_PAGE_TITLE" name="PRODUCTFEED_PAGE_TITLE" value="{{ settings.PRODUCTFEED_PAGE_TITLE }}">
+                            <small class="pf-hint">E.g. "Feed", "News", "Updates", "Blog".</small>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_URL_SLUG">URL slug</label>
-                    <div class="col-sm-9">
-                        <div class="input-group" style="max-width:500px">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">{{ feed_url|replace({(settings.PRODUCTFEED_URL_SLUG): ''}) }}</span>
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_URL_SLUG">URL slug</label>
+                            <small>Public path where this feed is accessible.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <div class="pf-url-group">
+                                <span class="pf-url-group__prefix">{{ feed_base_url }}</span>
+                                <input type="text" class="pf-input pf-url-group__slug" id="PRODUCTFEED_URL_SLUG" name="PRODUCTFEED_URL_SLUG" value="{{ settings.PRODUCTFEED_URL_SLUG }}">
                             </div>
-                            <input type="text" class="form-control" id="PRODUCTFEED_URL_SLUG" name="PRODUCTFEED_URL_SLUG" value="{{ settings.PRODUCTFEED_URL_SLUG }}">
+                            <small class="pf-hint">Lowercase letters, numbers, and hyphens.</small>
                         </div>
-                        <small class="form-text text-muted">Only lowercase letters, numbers, and hyphens. E.g., "feed", "blog", "posts".</small>
                     </div>
-                </div>
+                </section>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_PER_PAGE">Products per page</label>
-                    <div class="col-sm-9">
-                        <input type="number" class="form-control" id="PRODUCTFEED_PER_PAGE" name="PRODUCTFEED_PER_PAGE" value="{{ settings.PRODUCTFEED_PER_PAGE }}" min="1" max="100" style="max-width:120px">
+                {# ===== Sorting & pagination ===== #}
+                <section id="sec-sorting" class="pf-sec">
+                    <h2 class="pf-sec__title">Sorting &amp; pagination</h2>
+                    <p class="pf-sec__sub">How products are ordered and paged on the feed.</p>
+
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_PER_PAGE">Products per page</label>
+                            <small>Between 5 and 50.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <input type="number" class="pf-input pf-input--sm" id="PRODUCTFEED_PER_PAGE" name="PRODUCTFEED_PER_PAGE" value="{{ settings.PRODUCTFEED_PER_PAGE }}" min="5" max="50">
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SCROLL_TYPE">Scroll type</label>
-                    <div class="col-sm-9">
-                        <select class="form-control" id="PRODUCTFEED_SCROLL_TYPE" name="PRODUCTFEED_SCROLL_TYPE" style="max-width:250px">
-                            <option value="pagination" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'pagination' ? 'selected' : '' }}>Pagination</option>
-                            <option value="infinite" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'infinite' ? 'selected' : '' }}>Infinite Scroll</option>
-                        </select>
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label>Scroll type</label>
+                            <small>How visitors move between pages.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <div class="pf-seg" role="radiogroup">
+                                <input type="radio" name="PRODUCTFEED_SCROLL_TYPE" id="scroll-pagination" value="pagination" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'pagination' ? 'checked' : '' }}>
+                                <label for="scroll-pagination">Pagination</label>
+                                <input type="radio" name="PRODUCTFEED_SCROLL_TYPE" id="scroll-infinite" value="infinite" {{ settings.PRODUCTFEED_SCROLL_TYPE == 'infinite' ? 'checked' : '' }}>
+                                <label for="scroll-infinite">Infinite Scroll</label>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SORT_BY">Sort by</label>
-                    <div class="col-sm-9">
-                        <select class="form-control" id="PRODUCTFEED_SORT_BY" name="PRODUCTFEED_SORT_BY" style="max-width:250px">
-                            <option value="date_add" {{ settings.PRODUCTFEED_SORT_BY == 'date_add' ? 'selected' : '' }}>Date Added</option>
-                            <option value="date_upd" {{ settings.PRODUCTFEED_SORT_BY == 'date_upd' ? 'selected' : '' }}>Date Updated</option>
-                            <option value="position" {{ settings.PRODUCTFEED_SORT_BY == 'position' ? 'selected' : '' }}>Position</option>
-                        </select>
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_SORT_BY">Sort by</label>
+                            <small>Default sorting dimension.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <select class="cdd" id="PRODUCTFEED_SORT_BY" name="PRODUCTFEED_SORT_BY">
+                                <option value="date_add" {{ settings.PRODUCTFEED_SORT_BY == 'date_add' ? 'selected' : '' }}>Date Added</option>
+                                <option value="date_upd" {{ settings.PRODUCTFEED_SORT_BY == 'date_upd' ? 'selected' : '' }}>Date Updated</option>
+                                <option value="position" {{ settings.PRODUCTFEED_SORT_BY == 'position' ? 'selected' : '' }}>Position</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3" for="PRODUCTFEED_SORT_ORDER">Sort order</label>
-                    <div class="col-sm-9">
-                        <select class="form-control" id="PRODUCTFEED_SORT_ORDER" name="PRODUCTFEED_SORT_ORDER" style="max-width:250px">
-                            <option value="DESC" {{ settings.PRODUCTFEED_SORT_ORDER == 'DESC' ? 'selected' : '' }}>Newest first</option>
-                            <option value="ASC" {{ settings.PRODUCTFEED_SORT_ORDER == 'ASC' ? 'selected' : '' }}>Oldest first</option>
-                        </select>
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label>Sort order</label>
+                            <small>Ascending or descending.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <div class="pf-seg" role="radiogroup">
+                                <input type="radio" name="PRODUCTFEED_SORT_ORDER" id="order-desc" value="DESC" {{ settings.PRODUCTFEED_SORT_ORDER == 'DESC' ? 'checked' : '' }}>
+                                <label for="order-desc">Newest first</label>
+                                <input type="radio" name="PRODUCTFEED_SORT_ORDER" id="order-asc" value="ASC" {{ settings.PRODUCTFEED_SORT_ORDER == 'ASC' ? 'checked' : '' }}>
+                                <label for="order-asc">Oldest first</label>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <hr>
-                <h4 class="mb-3">Display Options</h4>
+                {# ===== Display options ===== #}
+                <section id="sec-display" class="pf-sec">
+                    <h2 class="pf-sec__title">Display options</h2>
+                    <p class="pf-sec__sub">Which pieces of information appear on product cards.</p>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3">Show category</label>
-                    <div class="col-sm-9">
-                        <div class="custom-control custom-switch">
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_SHOW_CATEGORY">Show category</label>
+                            <small>Display category name on feed cards.</small>
+                        </div>
+                        <div class="pf-row__field pf-row__field--toggle">
                             <input type="hidden" name="PRODUCTFEED_SHOW_CATEGORY" value="0">
-                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_CATEGORY" name="PRODUCTFEED_SHOW_CATEGORY" value="1" {{ settings.PRODUCTFEED_SHOW_CATEGORY ? 'checked' : '' }}>
-                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_CATEGORY">Display category name on feed cards</label>
+                            <label class="pf-toggle">
+                                <input type="checkbox" name="PRODUCTFEED_SHOW_CATEGORY" id="PRODUCTFEED_SHOW_CATEGORY" value="1" {{ settings.PRODUCTFEED_SHOW_CATEGORY ? 'checked' : '' }}>
+                                <span class="pf-toggle__track"></span>
+                            </label>
                         </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3">Show date</label>
-                    <div class="col-sm-9">
-                        <div class="custom-control custom-switch">
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_SHOW_DATE">Show date</label>
+                            <small>Display time ago on feed cards.</small>
+                        </div>
+                        <div class="pf-row__field pf-row__field--toggle">
                             <input type="hidden" name="PRODUCTFEED_SHOW_DATE" value="0">
-                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_DATE" name="PRODUCTFEED_SHOW_DATE" value="1" {{ settings.PRODUCTFEED_SHOW_DATE ? 'checked' : '' }}>
-                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_DATE">Display time ago on feed cards</label>
+                            <label class="pf-toggle">
+                                <input type="checkbox" name="PRODUCTFEED_SHOW_DATE" id="PRODUCTFEED_SHOW_DATE" value="1" {{ settings.PRODUCTFEED_SHOW_DATE ? 'checked' : '' }}>
+                                <span class="pf-toggle__track"></span>
+                            </label>
                         </div>
                     </div>
-                </div>
 
-                <div class="form-group row">
-                    <label class="form-control-label col-sm-3">Show price</label>
-                    <div class="col-sm-9">
-                        <div class="custom-control custom-switch">
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="PRODUCTFEED_SHOW_PRICE">Show price</label>
+                            <small>Display price on feed cards.</small>
+                        </div>
+                        <div class="pf-row__field pf-row__field--toggle">
                             <input type="hidden" name="PRODUCTFEED_SHOW_PRICE" value="0">
-                            <input type="checkbox" class="custom-control-input" id="PRODUCTFEED_SHOW_PRICE" name="PRODUCTFEED_SHOW_PRICE" value="1" {{ settings.PRODUCTFEED_SHOW_PRICE ? 'checked' : '' }}>
-                            <label class="custom-control-label" for="PRODUCTFEED_SHOW_PRICE">Display price on feed cards</label>
+                            <label class="pf-toggle">
+                                <input type="checkbox" name="PRODUCTFEED_SHOW_PRICE" id="PRODUCTFEED_SHOW_PRICE" value="1" {{ settings.PRODUCTFEED_SHOW_PRICE ? 'checked' : '' }}>
+                                <span class="pf-toggle__track"></span>
+                            </label>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <hr>
-                <div class="form-group row">
-                    <div class="col-sm-9 offset-sm-3">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="material-icons">save</i> Save Settings
-                        </button>
-                    </div>
+                {# ===== Footer actions ===== #}
+                <div class="pf-sec__actions">
+                    <a href="{{ path('admin_productfeed_settings') }}" class="pf-btn pf-btn--ghost">Cancel</a>
+                    <button type="submit" class="pf-btn pf-btn--primary">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save settings
+                    </button>
                 </div>
-            </form>
+            </div>
         </div>
+        </form>
     </div>
 </div>
+
+<style>
+/* ================ Shared dashboard tokens (duplicated from products page for this view) ================ */
+.pf-dash { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; color: #1a1d21; background: #f7f3ee; padding: 20px 16px; min-height: 100%; }
+.pf-dash .pf-card { background: #fff; border-radius: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 20px 40px rgba(0,0,0,0.04); overflow: hidden; }
+
+/* Header */
+.pf-dash .pf-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px 26px 16px; }
+.pf-dash .pf-head__left { display: flex; gap: 14px; align-items: flex-start; }
+.pf-dash .pf-brand { width: 44px; height: 44px; border-radius: 12px; background: #1a1d21; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pf-dash .pf-title { font-size: 26px; font-weight: 700; margin: 0; display: flex; align-items: baseline; gap: 8px; line-height: 1.1; }
+.pf-dash .pf-title__main { letter-spacing: -0.01em; }
+.pf-dash .pf-title__accent { font-family: "Georgia", "Times New Roman", serif; font-style: italic; font-weight: 400; color: #c87c3d; font-size: 0.8em; }
+.pf-dash .pf-status { font-size: 13px; color: #6b7280; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pf-dash .pf-status code { background: #f1f2f4; color: #1a1d21; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: "SF Mono", Menlo, monospace; }
+.pf-dash .pf-sep { color: #d1d5db; }
+.pf-dash .pf-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.18); animation: pf-pulse 2s infinite; }
+@keyframes pf-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.pf-dash .pf-head__right { display: flex; gap: 8px; flex-shrink: 0; }
+.pf-dash .pf-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; border: 1px solid transparent; background: #fff; color: #1a1d21; cursor: pointer; text-decoration: none; transition: background 0.15s, border-color 0.15s, transform 0.05s; }
+.pf-dash .pf-btn:hover { text-decoration: none; }
+.pf-dash .pf-btn:active { transform: translateY(1px); }
+.pf-dash .pf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pf-dash .pf-btn--ghost { border-color: #e5e7eb; }
+.pf-dash .pf-btn--ghost:hover { background: #f9fafb; border-color: #d1d5db; color: #1a1d21; }
+.pf-dash .pf-btn--dark { background: #1a1d21; color: #fff; border-color: #1a1d21; }
+.pf-dash .pf-btn--dark:hover { background: #2d3137; color: #fff; }
+.pf-dash .pf-btn--primary { background: #c87c3d; color: #fff; border-color: #c87c3d; }
+.pf-dash .pf-btn--primary:hover { background: #b26a2e; border-color: #b26a2e; color: #fff; }
+
+/* Tabs */
+.pf-dash .pf-tabs { display: flex; gap: 24px; padding: 0 26px; border-bottom: 1px solid #f1f2f4; }
+.pf-dash .pf-tab { display: inline-flex; align-items: center; gap: 6px; padding: 12px 2px 14px; font-size: 14px; color: #6b7280; border-bottom: 2px solid transparent; text-decoration: none; transition: color 0.15s, border-color 0.15s; }
+.pf-dash .pf-tab:hover { color: #1a1d21; text-decoration: none; }
+.pf-dash .pf-tab--active { color: #1a1d21; border-bottom-color: #1a1d21; font-weight: 600; }
+.pf-dash .pf-tab__count { display: inline-block; min-width: 22px; padding: 2px 7px; border-radius: 10px; background: #f1f2f4; color: #374151; font-size: 11px; font-weight: 700; text-align: center; }
+
+/* ================ Settings layout ================ */
+.pf-dash .pf-toast { display: flex; align-items: center; gap: 8px; margin: 16px 26px 0; padding: 10px 14px; background: #dcfce7; border: 1px solid #86efac; color: #166534; border-radius: 10px; font-size: 13px; }
+.pf-dash .pf-toast svg { color: #22c55e; }
+
+.pf-dash .pf-settings { display: block; padding: 20px 0 0; }
+.pf-dash .pf-settings--single { max-width: 900px; margin: 0 auto; }
+.pf-dash .pf-settings__body { padding: 0 40px 24px; }
+.pf-dash .pf-sec { padding: 24px 0; border-bottom: 1px solid #f4f5f7; }
+.pf-dash .pf-sec:last-of-type { border-bottom: 0; }
+.pf-dash .pf-sec__title { font-family: "Georgia", "Times New Roman", serif; font-style: italic; font-weight: 400; font-size: 22px; color: #1a1d21; margin: 0 0 4px; letter-spacing: -0.01em; }
+.pf-dash .pf-sec__sub { color: #9ca3af; font-size: 13px; margin: 0 0 20px; }
+
+.pf-dash .pf-row { display: grid; grid-template-columns: 260px 1fr; gap: 24px; padding: 16px 0; border-top: 1px solid #f4f5f7; align-items: start; }
+.pf-dash .pf-row:first-of-type { border-top: 0; padding-top: 4px; }
+.pf-dash .pf-row__label label { display: block; font-weight: 600; font-size: 13px; color: #1a1d21; margin: 0 0 4px; cursor: pointer; }
+.pf-dash .pf-row__label small { display: block; color: #9ca3af; font-size: 12px; line-height: 1.5; }
+.pf-dash .pf-row__field { max-width: 520px; }
+.pf-dash .pf-row__field--toggle { max-width: none; display: flex; justify-content: flex-end; align-items: center; }
+
+.pf-dash .pf-input { width: 100%; padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #1a1d21; background: #fff; transition: border-color 0.15s, box-shadow 0.15s; }
+.pf-dash .pf-input:focus { outline: none; border-color: #1a1d21; box-shadow: 0 0 0 3px rgba(26,29,33,0.06); }
+.pf-dash .pf-input--sm { max-width: 110px; text-align: center; }
+.pf-dash .pf-hint { display: block; margin-top: 6px; color: #c87c3d; font-size: 12px; }
+
+/* URL prefix + slug */
+.pf-dash .pf-url-group { display: flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #fff; }
+.pf-dash .pf-url-group:focus-within { border-color: #1a1d21; box-shadow: 0 0 0 3px rgba(26,29,33,0.06); }
+.pf-dash .pf-url-group__prefix { padding: 9px 12px; background: #fafafa; color: #6b7280; font-family: "SF Mono", Menlo, monospace; font-size: 12px; border-right: 1px solid #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.pf-dash .pf-url-group__slug { border: 0; border-radius: 0; flex: 1; font-family: "SF Mono", Menlo, monospace; }
+.pf-dash .pf-url-group__slug:focus { box-shadow: none; }
+
+/* Select */
+.pf-dash .pf-select-wrap { position: relative; max-width: 240px; }
+.pf-dash .pf-select-wrap select { appearance: none; -webkit-appearance: none; padding-right: 32px; cursor: pointer; }
+.pf-dash .pf-select-wrap svg { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6b7280; pointer-events: none; }
+
+/* Segmented control (radio group) */
+.pf-dash .pf-seg { display: inline-flex; background: #f4f5f7; border-radius: 10px; padding: 3px; gap: 0; }
+.pf-dash .pf-seg input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.pf-dash .pf-seg label { display: inline-flex; align-items: center; justify-content: center; padding: 6px 14px; font-size: 13px; font-weight: 500; color: #6b7280; border-radius: 8px; cursor: pointer; transition: all 0.15s; margin: 0; }
+.pf-dash .pf-seg input:checked + label { background: #fff; color: #1a1d21; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
+/* Orange toggle switch */
+.pf-dash .pf-toggle { position: relative; display: inline-block; width: 44px; height: 24px; margin: 0; cursor: pointer; }
+.pf-dash .pf-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.pf-dash .pf-toggle__track { position: absolute; inset: 0; background: #d1d5db; border-radius: 24px; transition: background 0.2s; }
+.pf-dash .pf-toggle__track::before { content: ""; position: absolute; width: 20px; height: 20px; left: 2px; top: 2px; background: #fff; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.pf-dash .pf-toggle input:checked + .pf-toggle__track { background: #c87c3d; }
+.pf-dash .pf-toggle input:checked + .pf-toggle__track::before { transform: translateX(20px); }
+
+/* Footer actions */
+.pf-dash .pf-sec__actions { display: flex; justify-content: flex-end; gap: 8px; padding: 24px 0 8px; border-top: 1px solid #f4f5f7; }
+
+/* Responsive */
+@media (max-width: 900px) {
+    .pf-dash .pf-settings__body { padding: 0 26px 24px; }
+    .pf-dash .pf-row { grid-template-columns: 1fr; gap: 10px; }
+}
+</style>
+
 {% endblock %}

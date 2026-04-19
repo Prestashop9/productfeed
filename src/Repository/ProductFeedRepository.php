@@ -9,6 +9,33 @@ use DbQuery;
 
 class ProductFeedRepository
 {
+    /** @var bool Has schema migration already been checked this request? */
+    private static $schemaChecked = false;
+
+    public function __construct()
+    {
+        if (!self::$schemaChecked) {
+            $this->ensureSchema();
+            self::$schemaChecked = true;
+        }
+    }
+
+    /**
+     * Idempotently add pushed_at column if missing (backfills from date_add).
+     * Self-heals existing installs so no version bump / upgrade script required.
+     */
+    private function ensureSchema(): void
+    {
+        $db = Db::getInstance();
+        $table = _DB_PREFIX_ . 'productfeed';
+        $cols = $db->executeS('SHOW COLUMNS FROM `' . $table . '` LIKE "pushed_at"');
+        if (empty($cols)) {
+            $db->execute('ALTER TABLE `' . $table . '` ADD COLUMN `pushed_at` DATETIME NOT NULL AFTER `badge_expires`');
+            $db->execute('UPDATE `' . $table . '` SET `pushed_at` = `date_add`');
+            $db->execute('ALTER TABLE `' . $table . '` ADD INDEX `idx_pushed_at` (`pushed_at`)');
+        }
+    }
+
     public function getProductsForFeed(
         int $idLang,
         int $idShop,
@@ -20,10 +47,6 @@ class ProductFeedRepository
         string $feedSort = ''
     ): array {
         $offset = ($page - 1) * $perPage;
-
-        $allowedSort = ['date_add', 'date_upd', 'position'];
-        $sortBy = in_array($sortBy, $allowedSort) ? $sortBy : 'date_add';
-        $sortOrder = strtoupper($sortOrder) === 'ASC' ? 'ASC' : 'DESC';
 
         $query = new DbQuery();
         $query->select('
@@ -38,6 +61,7 @@ class ProductFeedRepository
             pf.is_sticky,
             pf.badge_text,
             pf.badge_expires,
+            pf.pushed_at,
             pf.date_add AS feed_date_add,
             pf.date_upd AS feed_date_upd,
             cl.name AS category_name,
@@ -62,13 +86,13 @@ class ProductFeedRepository
             $query->where('p.id_category_default = ' . $idCategory);
         }
 
-        // Sort by feed mode — sticky always comes first
+        // Sort by feed mode — sticky always comes first, then by pushed_at (freshness)
         if ($feedSort === 'popular') {
-            $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC, p.date_add DESC');
+            $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC, pf.pushed_at DESC');
         } elseif ($feedSort === 'bestselling') {
             $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC');
         } else {
-            $query->orderBy('pf.is_sticky DESC, pf.' . $sortBy . ' ' . $sortOrder);
+            $query->orderBy('pf.is_sticky DESC, pf.pushed_at DESC');
         }
 
         $query->limit($perPage, $offset);
@@ -134,7 +158,7 @@ class ProductFeedRepository
                     pf.is_active,
                     pf.badge_text,
                     pf.badge_expires,
-                    pf.position,
+                    pf.pushed_at,
                     pf.date_add,
                     pf.date_upd,
                     pl.name AS product_name,
@@ -142,6 +166,7 @@ class ProductFeedRepository
                     p.reference,
                     p.date_add AS product_date_add,
                     p.date_upd AS product_date_upd,
+                    p.id_category_default AS id_category,
                     cl.name AS category_name,
                     img.id_image
                 FROM `' . _DB_PREFIX_ . 'productfeed` pf
@@ -151,7 +176,7 @@ class ProductFeedRepository
                 LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop . '
                 LEFT JOIN `' . _DB_PREFIX_ . 'image` img ON img.id_product = p.id_product AND img.cover = 1
                 WHERE 1=1' . $searchWhere . '
-                ORDER BY pf.is_sticky DESC, pf.date_add DESC
+                ORDER BY pf.is_sticky DESC, pf.pushed_at DESC
                 LIMIT ' . $offset . ', ' . $perPage;
 
         return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
@@ -192,19 +217,58 @@ class ProductFeedRepository
 
     public function addProduct(int $idProduct): bool
     {
+        $now = date('Y-m-d H:i:s');
         return (bool) Db::getInstance()->insert('productfeed', [
             'id_product' => $idProduct,
             'is_sticky' => 0,
             'is_active' => 1,
-            'position' => $idProduct,
-            'date_add' => date('Y-m-d H:i:s'),
-            'date_upd' => date('Y-m-d H:i:s'),
+            'pushed_at' => $now,
+            'date_add' => $now,
+            'date_upd' => $now,
         ]);
     }
 
     public function removeProduct(int $idProduct): bool
     {
         return (bool) Db::getInstance()->delete('productfeed', 'id_product = ' . $idProduct);
+    }
+
+    /**
+     * Bump a product to the top of the feed by refreshing pushed_at to NOW.
+     */
+    public function pushProduct(int $idProduct): bool
+    {
+        return (bool) Db::getInstance()->update(
+            'productfeed',
+            ['pushed_at' => date('Y-m-d H:i:s'), 'date_upd' => date('Y-m-d H:i:s')],
+            'id_product = ' . $idProduct
+        );
+    }
+
+    /**
+     * Apply a manual order by stamping staggered pushed_at values.
+     * First id in $idsInOrder gets NOW, next gets NOW-1s, and so on.
+     * Any product NOT listed is untouched — it keeps its existing pushed_at.
+     */
+    public function bulkReorder(array $idsInOrder): bool
+    {
+        $db = Db::getInstance();
+        $nowTs = time();
+        $success = true;
+        foreach (array_values($idsInOrder) as $i => $idProduct) {
+            $idProduct = (int) $idProduct;
+            if ($idProduct <= 0) {
+                continue;
+            }
+            $ts = date('Y-m-d H:i:s', $nowTs - $i);
+            $ok = $db->update(
+                'productfeed',
+                ['pushed_at' => $ts, 'date_upd' => date('Y-m-d H:i:s')],
+                'id_product = ' . $idProduct
+            );
+            $success = $success && (bool) $ok;
+        }
+        return $success;
     }
 
     public function productExists(int $idProduct): bool
@@ -219,7 +283,7 @@ class ProductFeedRepository
 
     public function getFieldValue(int $idProduct, string $field): mixed
     {
-        $allowed = ['is_sticky', 'is_active', 'position'];
+        $allowed = ['is_sticky', 'is_active'];
         if (!in_array($field, $allowed)) {
             return null;
         }

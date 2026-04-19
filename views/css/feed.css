@@ -278,22 +278,64 @@
     gap: 6px;
 }
 
-/* Product badge — top-right corner of thumbnail */
-.pf-card__badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: #fff;
-    font-size: 11px;
+/* Meta-right container: holds badge + pinned tag at top-right of the card header */
+.pf-card__meta-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+/*
+ * Product badge — pill flag that blends with the active theme.
+ *
+ * Theme-aware tokens: reads the theme's own Bootstrap CSS variables so the
+ * badge automatically adopts whatever "danger/accent" shade the theme defines
+ * (Hummingbird, Classic, and any Bootstrap 5 theme expose these). Fallbacks
+ * are only used if the theme has no Bootstrap vars at all.
+ *
+ * Override per-site by setting --pf-badge-bg / --pf-badge-color on .pf-card.
+ */
+.pf-card {
+    --pf-badge-bg: var(--bs-purple, #8b5cf6);
+    --pf-badge-color: #fff;
+    --pf-badge-radius: var(--bs-border-radius-sm, 0.25rem);
+}
+
+.pf-card .pf-card__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    padding: 0.45em 0.7em;
+    font-size: 0.75em;
     font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 8px;
-    z-index: 2;
     line-height: 1;
-    letter-spacing: 0.3px;
+    white-space: nowrap;
+    vertical-align: middle;
+    border-radius: var(--pf-badge-radius);
+    color: var(--pf-badge-color);
+    background-color: var(--pf-badge-bg);
     text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.3);
+    letter-spacing: 0.3px;
+}
+
+.pf-card .pf-card__badge-icon {
+    display: block; /* kills the inline-svg baseline gap that offsets text */
+    width: 0.9em;
+    height: 0.9em;
+    flex-shrink: 0;
+    animation: pf-badge-arrow 1.4s ease-in-out infinite;
+}
+
+.pf-card .pf-card__badge-text {
+    display: inline-block;
+    line-height: 1;
+}
+
+@keyframes pf-badge-arrow {
+    0%, 100% { transform: translateX(0); opacity: 0.85; }
+    50%      { transform: translateX(2px); opacity: 1; }
 }
 
 /* Discount badge — top-left corner of thumbnail */
@@ -422,6 +464,26 @@
 }
 
 .pf-card__btn--primary:active {
+    transform: translateY(0);
+    filter: brightness(0.95);
+}
+
+.pf-card__btn--library {
+    border: none;
+    background: #10b981;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(16,185,129,0.25);
+    text-decoration: none;
+}
+
+.pf-card__btn--library:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    color: #fff;
+    text-decoration: none;
+}
+
+.pf-card__btn--library:active {
     transform: translateY(0);
     filter: brightness(0.95);
 }

@@ -1,146 +1,208 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
 {% block content %}
-<div class="productfeed-admin">
-    <div class="card mb-3">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h3 class="card-header-title mb-0">
-                    <i class="material-icons">rss_feed</i>
-                    Product Feed Manager
-                </h3>
-                <a href="{{ feed_url }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                    <i class="material-icons">visibility</i> View Feed
-                </a>
-            </div>
-            <ul class="nav nav-tabs card-header-tabs">
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ path('admin_productfeed_list') }}">
-                        <i class="material-icons">list</i> Products
-                        <span class="badge badge-secondary ml-1">{{ total_products }}</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ settings_url }}">
-                        <i class="material-icons">settings</i> Settings
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="card-body">
-            <form method="get" action="{{ path('admin_productfeed_list') }}" class="mb-3">
-                <div class="input-group" style="max-width: 400px;">
-                    <input type="text" name="search" class="form-control" placeholder="Search by name or reference..." value="{{ search }}">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="material-icons">search</i>
-                        </button>
-                        {% if search %}
-                        <a href="{{ path('admin_productfeed_list') }}" class="btn btn-outline-secondary">
-                            <i class="material-icons">clear</i>
-                        </a>
-                        {% endif %}
+<div class="pf-dash">
+
+    {# ============ HEADER ============ #}
+    <div class="pf-card">
+        <div class="pf-head">
+            <div class="pf-head__left">
+                <div class="pf-brand">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M4 11a9 9 0 0 1 9 9"/>
+                        <path d="M4 4a16 16 0 0 1 16 16"/>
+                        <circle cx="5" cy="19" r="1"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="pf-title">
+                        <span class="pf-title__main">{{ feed_name }}</span>
+                        <em class="pf-title__accent">manager</em>
+                    </h1>
+                    <div class="pf-status">
+                        <span class="pf-live-dot"></span>
+                        Feed live at <code>/{{ feed_slug }}</code>
+                        <span class="pf-sep">·</span>
+                        {{ total_products }} products
+                        <span class="pf-sep">·</span>
+                        Last push {{ last_push_ago }}
                     </div>
                 </div>
+            </div>
+            <div class="pf-head__right">
+                <button type="button" class="pf-btn pf-btn--ghost" id="pf-export-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                </button>
+                <a href="{{ feed_url }}" target="_blank" class="pf-btn pf-btn--dark">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    View feed
+                </a>
+            </div>
+        </div>
+
+        {# ============ TABS ============ #}
+        <div class="pf-tabs">
+            <a href="{{ path('admin_productfeed_list') }}" class="pf-tab pf-tab--active">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Products <span class="pf-tab__count">{{ total_products }}</span>
+            </a>
+            <a href="{{ settings_url }}" class="pf-tab">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
+            </a>
+        </div>
+
+        {# ============ FILTER BAR ============ #}
+        <div class="pf-filters">
+            <form method="get" action="{{ path('admin_productfeed_list') }}" class="pf-search">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="search" placeholder="Search products…" value="{{ search }}">
+                {% if search %}<a href="{{ path('admin_productfeed_list') }}" class="pf-search__clear" title="Clear">&times;</a>{% endif %}
             </form>
 
-            <div class="table-responsive">
-                <table class="table table-hover" id="productfeed-table">
-                    <thead class="thead-default">
-                        <tr>
-                            <th style="width:50px">ID</th>
-                            <th style="width:60px">Image</th>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Created</th>
-                            <th>Updated</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for product in products %}
-                        <tr data-id="{{ product.id_product }}">
-                            <td>{{ product.id_product }}</td>
-                            <td>
-                                {% if product.image_url %}
-                                    <img src="{{ product.image_url }}" alt="" style="width:45px;height:45px;object-fit:cover;border-radius:4px;">
-                                {% else %}
-                                    <span class="text-muted"><i class="material-icons">image</i></span>
-                                {% endif %}
-                            </td>
-                            <td><strong>{{ product.product_name }}</strong></td>
-                            <td>{{ product.category_name }}</td>
-                            <td>{{ product.formatted_price }}</td>
-                            <td><small class="text-muted">{{ product.product_date_add|date('Y-m-d') }}</small></td>
-                            <td><small class="text-muted">{{ product.product_date_upd|date('Y-m-d') }}</small></td>
-                            <td class="text-center">
-                                <div class="pf-actions-group">
-                                    <button class="btn btn-sm pf-toggle-btn {{ product.is_active ? 'btn-success' : 'btn-outline-secondary' }}"
-                                            data-field="is_active"
-                                            data-id="{{ product.id_product }}"
-                                            title="{{ product.is_active ? 'Active' : 'Hidden' }}">
-                                        <i class="material-icons">{{ product.is_active ? 'visibility' : 'visibility_off' }}</i>
-                                    </button>
-                                    <button class="btn btn-sm pf-toggle-btn {{ product.is_sticky ? 'btn-warning' : 'btn-outline-secondary' }}"
-                                            data-field="is_sticky"
-                                            data-id="{{ product.id_product }}"
-                                            title="{{ product.is_sticky ? 'Pinned' : 'Not pinned' }}">
-                                        <i class="material-icons">{{ product.is_sticky ? 'push_pin' : 'outlined_flag' }}</i>
-                                    </button>
-                                    <div class="pf-badge-wrap">
-                                        <button class="btn btn-sm pf-toggle-btn pf-badge-trigger {{ product.badge_text ? 'btn-info' : 'btn-outline-secondary' }}"
-                                                data-id="{{ product.id_product }}"
-                                                data-badge-text="{{ product.badge_text|default('')|e('html_attr') }}"
-                                                data-badge-expires="{{ product.badge_expires ? product.badge_expires|date('Y-m-d') : '' }}"
-                                                title="{{ product.badge_text ? product.badge_text : 'No badge' }}">
-                                            <i class="material-icons">{{ product.badge_text ? 'label' : 'label_off' }}</i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="8" class="text-center text-muted py-4">No products found.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="pf-chips">
+                <button type="button" class="pf-chip pf-chip--active" disabled>
+                    Category <span class="pf-chip__val">All</span>
+                </button>
+                <button type="button" class="pf-chip" disabled>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
+                    Status
+                </button>
+                <button type="button" class="pf-chip" disabled>
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Date
+                </button>
             </div>
 
-            {% if total_pages > 1 %}
-            <nav class="mt-3">
-                <ul class="pagination justify-content-center">
-                    {% if current_page > 1 %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: current_page - 1, search: search}) }}">
-                            <i class="material-icons">chevron_left</i>
-                        </a>
-                    </li>
-                    {% endif %}
+            <div class="pf-sort">
+                <label>Sort</label>
+                <select id="pf-sort-select" class="cdd">
+                    <option value="custom" selected>Custom order</option>
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                </select>
+            </div>
+        </div>
 
-                    {% for p in range(max(1, current_page - 3), min(total_pages, current_page + 3)) %}
-                    <li class="page-item {{ p == current_page ? 'active' : '' }}">
-                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: p, search: search}) }}">{{ p }}</a>
-                    </li>
+        {# ============ CUSTOM-ORDER BANNER ============ #}
+        <div id="pf-banner" class="pf-banner">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span><strong>Custom order</strong> — drag a row by its handle, or type a new position number and press Enter.</span>
+            <span class="pf-banner__save-slot">
+                <a href="#" id="pf-save-order" class="pf-save-link" style="display:none;">Save order</a>
+            </span>
+        </div>
+
+        {# ============ TABLE ============ #}
+        <div class="pf-table-wrap">
+            <table class="pf-table" id="productfeed-table">
+                <thead>
+                    <tr>
+                        <th class="pf-th-pos">POS.</th>
+                        <th class="pf-th-check"><input type="checkbox" id="pf-check-all"></th>
+                        <th class="pf-th-id">ID</th>
+                        <th>PRODUCT</th>
+                        <th>CATEGORY</th>
+                        <th class="pf-th-price">PRICE</th>
+                        <th>CREATED</th>
+                        <th>PUSHED</th>
+                        <th class="pf-th-actions">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody id="pf-tbody">
+                    {% for product in products %}
+                    {% set badge_expired = product.badge_text and product.badge_expires and product.badge_expires|date('U') < 'now'|date('U') %}
+                    {% set badge_active = product.badge_text and not badge_expired %}
+                    {% set cat_hue = (product.id_category|default(0) * 137) % 360 %}
+                    <tr data-id="{{ product.id_product }}">
+                        <td class="pf-td-pos">
+                            <span class="pf-grip" title="Drag to reorder">
+                                <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><circle cx="7" cy="4" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="7" cy="10" r="1.5"/><circle cx="13" cy="10" r="1.5"/><circle cx="7" cy="16" r="1.5"/><circle cx="13" cy="16" r="1.5"/></svg>
+                            </span>
+                            <input type="number" class="pf-pos-input" min="1" step="1" data-id="{{ product.id_product }}">
+                        </td>
+                        <td><input type="checkbox" class="pf-row-check" data-id="{{ product.id_product }}"></td>
+                        <td class="pf-td-id">#{{ product.id_product }}</td>
+                        <td class="pf-td-product">
+                            {% if product.image_url %}
+                                <img src="{{ product.image_url }}" alt="" class="pf-thumb">
+                            {% else %}
+                                <div class="pf-thumb pf-thumb--empty"></div>
+                            {% endif %}
+                            <div class="pf-td-product__text">
+                                <div class="pf-product-name">{{ product.product_name }}</div>
+                                {% if product.reference %}<div class="pf-product-sub">{{ product.reference }}</div>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            {% if product.category_name %}
+                            <span class="pf-cat-pill" style="--h:{{ cat_hue }}">
+                                <span class="pf-cat-dot"></span>{{ product.category_name }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="pf-td-price">${{ product.price|number_format(2, '.', ',') }}</td>
+                        <td class="pf-td-date">
+                            <div>{{ product.product_date_add|date('Y-m-d') }}</div>
+                            <div class="pf-td-date__ago" data-ts="{{ product.product_date_add|date('U') }}"></div>
+                        </td>
+                        <td class="pf-td-date">
+                            <div class="pf-pushed-at" data-id="{{ product.id_product }}">{{ product.pushed_at|date('Y-m-d H:i') }}</div>
+                            <div class="pf-td-date__ago" data-ts="{{ product.pushed_at|date('U') }}"></div>
+                        </td>
+                        <td class="pf-td-actions">
+                            <button class="pf-act pf-act--push" data-id="{{ product.id_product }}" title="Push to top">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/></svg>
+                            </button>
+                            <button class="pf-act pf-act--visible {{ product.is_active ? 'is-on' : '' }}" data-field="is_active" data-id="{{ product.id_product }}" title="{{ product.is_active ? 'Visible' : 'Hidden' }}">
+                                {% if product.is_active %}
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                {% else %}
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                                {% endif %}
+                            </button>
+                            <button class="pf-act pf-act--pin {{ product.is_sticky ? 'is-on' : '' }}" data-field="is_sticky" data-id="{{ product.id_product }}" title="{{ product.is_sticky ? 'Pinned' : 'Not pinned' }}">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>
+                            </button>
+                            <div class="pf-badge-wrap">
+                                <button class="pf-act pf-act--badge {{ badge_active ? 'is-on' : (badge_expired ? 'is-expired' : '') }} pf-badge-trigger"
+                                        data-id="{{ product.id_product }}"
+                                        data-badge-text="{{ product.badge_text|default('')|e('html_attr') }}"
+                                        data-badge-expires="{{ product.badge_expires ? product.badge_expires|date('Y-m-d') : '' }}"
+                                        title="{{ badge_active ? product.badge_text : (badge_expired ? 'Expired: ' ~ product.badge_text : 'No badge') }}">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="pf-empty">No products found.</td></tr>
                     {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-                    {% if current_page < total_pages %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ path('admin_productfeed_list', {page: current_page + 1, search: search}) }}">
-                            <i class="material-icons">chevron_right</i>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
+        {# ============ PAGINATION ============ #}
+        <div class="pf-foot">
+            <div class="pf-foot__info">
+                Showing <strong>{{ ((current_page - 1) * 50) + 1 }}–{{ min(current_page * 50, total_products) }}</strong> of <strong>{{ total_products }}</strong>
+            </div>
+            {% if total_pages > 1 %}
+            <div class="pf-pager">
+                <a class="pf-pager__btn {{ current_page <= 1 ? 'is-disabled' : '' }}" href="{{ current_page > 1 ? path('admin_productfeed_list', {page: current_page - 1, search: search}) : '#' }}">&lsaquo;</a>
+                {% for p in range(max(1, current_page - 2), min(total_pages, current_page + 2)) %}
+                    <a class="pf-pager__btn {{ p == current_page ? 'is-active' : '' }}" href="{{ path('admin_productfeed_list', {page: p, search: search}) }}">{{ p }}</a>
+                {% endfor %}
+                {% if current_page + 2 < total_pages %}<span class="pf-pager__ellip">…</span><a class="pf-pager__btn" href="{{ path('admin_productfeed_list', {page: total_pages, search: search}) }}">{{ total_pages }}</a>{% endif %}
+                <a class="pf-pager__btn {{ current_page >= total_pages ? 'is-disabled' : '' }}" href="{{ current_page < total_pages ? path('admin_productfeed_list', {page: current_page + 1, search: search}) : '#' }}">&rsaquo;</a>
+            </div>
             {% endif %}
         </div>
     </div>
 </div>
 
-{# Badge popup (single instance, repositioned on click) #}
+{# ============ BADGE POPUP ============ #}
 <div class="pf-badge-popup" id="pf-badge-popup" style="display:none;">
     <div class="pf-badge-popup__header">
         <strong>Set Badge</strong>
@@ -156,158 +218,391 @@
         <button type="button" class="pf-badge-preset" data-text="Trending">Trending</button>
     </div>
     <div class="pf-badge-popup__form">
-        <input type="text" id="pf-badge-text" class="form-control form-control-sm" placeholder="Custom text..." maxlength="50">
+        <input type="text" id="pf-badge-text" placeholder="Custom text…" maxlength="50">
         <div class="pf-badge-popup__expiry">
             <label><small>Expires</small></label>
-            <div class="d-flex align-items-center gap-2">
-                <input type="date" id="pf-badge-expires" class="form-control form-control-sm">
-                <label class="pf-badge-lifetime mb-0">
-                    <input type="checkbox" id="pf-badge-lifetime"> <small>Lifetime</small>
-                </label>
+            <div class="pf-badge-popup__row">
+                <input type="date" id="pf-badge-expires">
+                <label class="pf-badge-lifetime"><input type="checkbox" id="pf-badge-lifetime"> <small>Lifetime</small></label>
             </div>
         </div>
         <div class="pf-badge-popup__actions">
-            <button type="button" class="btn btn-sm btn-primary" id="pf-badge-save">Apply</button>
-            <button type="button" class="btn btn-sm btn-outline-danger" id="pf-badge-remove">Remove</button>
+            <button type="button" id="pf-badge-save">Apply</button>
+            <button type="button" id="pf-badge-remove" class="pf-badge-popup__remove">Remove</button>
         </div>
     </div>
 </div>
 
 <style>
-.productfeed-admin .table td { vertical-align: middle; }
-.pf-actions-group { display: inline-flex; gap: 4px; align-items: center; }
-.pf-toggle-btn { width: 34px; height: 34px; padding: 4px; border-radius: 50%; transition: all 0.2s ease; }
-.pf-toggle-btn:hover { transform: scale(1.1); }
-.pf-toggle-btn .material-icons { font-size: 18px; }
-.pf-badge-wrap { position: relative; }
+/* ====== Fonts ====== */
+.pf-dash { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; color: #1a1d21; background: #f7f3ee; padding: 20px 16px; min-height: 100%; }
 
-/* Badge popup */
-.pf-badge-popup {
-    position: fixed;
-    z-index: 10000;
+/* ====== Card ====== */
+.pf-dash .pf-card {
     background: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 10px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-    width: 280px;
-    padding: 0;
+    border-radius: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 20px 40px rgba(0,0,0,0.04);
     overflow: hidden;
 }
-.pf-badge-popup__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    border-bottom: 1px solid #f0f0f0;
-    background: #f8f9fa;
+
+/* ====== Header ====== */
+.pf-dash .pf-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 22px 26px 16px; }
+.pf-dash .pf-head__left { display: flex; gap: 14px; align-items: flex-start; }
+.pf-dash .pf-brand {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: #1a1d21; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
-.pf-badge-popup__close {
-    border: none; background: none; font-size: 20px; cursor: pointer; color: #999; line-height: 1;
+.pf-dash .pf-title { font-size: 26px; font-weight: 700; margin: 0; display: flex; align-items: baseline; gap: 8px; line-height: 1.1; }
+.pf-dash .pf-title__main { letter-spacing: -0.01em; }
+.pf-dash .pf-title__accent { font-family: "Georgia", "Times New Roman", serif; font-style: italic; font-weight: 400; color: #c87c3d; font-size: 0.8em; }
+.pf-dash .pf-status { font-size: 13px; color: #6b7280; margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pf-dash .pf-status code { background: #f1f2f4; color: #1a1d21; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-family: "SF Mono", Menlo, monospace; }
+.pf-dash .pf-sep { color: #d1d5db; }
+.pf-dash .pf-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.18); animation: pf-pulse 2s infinite; }
+@keyframes pf-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.pf-dash .pf-head__right { display: flex; gap: 8px; flex-shrink: 0; }
+.pf-dash .pf-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    border: 1px solid transparent; background: #fff; color: #1a1d21; cursor: pointer;
+    text-decoration: none; transition: background 0.15s, border-color 0.15s, transform 0.05s;
 }
-.pf-badge-popup__presets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 12px 14px 8px;
+.pf-dash .pf-btn:hover { text-decoration: none; }
+.pf-dash .pf-btn:active { transform: translateY(1px); }
+.pf-dash .pf-btn--ghost { border-color: #e5e7eb; }
+.pf-dash .pf-btn--ghost:hover { background: #f9fafb; border-color: #d1d5db; color: #1a1d21; }
+.pf-dash .pf-btn--dark { background: #1a1d21; color: #fff; border-color: #1a1d21; }
+.pf-dash .pf-btn--dark:hover { background: #2d3137; color: #fff; }
+
+/* ====== Tabs ====== */
+.pf-dash .pf-tabs { display: flex; gap: 24px; padding: 0 26px; border-bottom: 1px solid #f1f2f4; }
+.pf-dash .pf-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 12px 2px 14px; font-size: 14px; color: #6b7280;
+    border-bottom: 2px solid transparent; text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
 }
-.pf-badge-preset {
-    padding: 4px 12px;
-    border: 1px solid #dee2e6;
-    border-radius: 20px;
-    background: #fff;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
+.pf-dash .pf-tab:hover { color: #1a1d21; text-decoration: none; }
+.pf-dash .pf-tab--active { color: #1a1d21; border-bottom-color: #1a1d21; font-weight: 600; }
+.pf-dash .pf-tab__count { display: inline-block; min-width: 22px; padding: 2px 7px; border-radius: 10px; background: #1a1d21; color: #fff; font-size: 11px; font-weight: 700; text-align: center; }
+
+/* ====== Filter bar ====== */
+.pf-dash .pf-filters { display: flex; align-items: center; gap: 10px; padding: 18px 26px; flex-wrap: wrap; }
+.pf-dash .pf-search {
+    position: relative; display: flex; align-items: center;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 999px;
+    padding: 0 14px; width: 280px; margin: 0;
 }
-.pf-badge-preset:hover, .pf-badge-preset.active {
-    background: #25b9d7;
-    color: #fff;
-    border-color: #25b9d7;
+.pf-dash .pf-search svg { color: #9ca3af; flex-shrink: 0; }
+.pf-dash .pf-search input { border: 0; background: transparent; outline: none; padding: 8px 10px; font-size: 13px; width: 100%; color: #1a1d21; }
+.pf-dash .pf-search input::placeholder { color: #9ca3af; }
+.pf-dash .pf-search__clear { color: #9ca3af; text-decoration: none; font-size: 18px; line-height: 1; padding: 0 4px; }
+.pf-dash .pf-search__clear:hover { color: #1a1d21; text-decoration: none; }
+
+.pf-dash .pf-chips { display: inline-flex; gap: 8px; }
+.pf-dash .pf-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px; border: 1px solid #e5e7eb;
+    background: #fff; color: #374151; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
 }
-.pf-badge-popup__form {
-    padding: 8px 14px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.pf-dash .pf-chip:hover:not(:disabled) { border-color: #d1d5db; background: #f9fafb; }
+.pf-dash .pf-chip:disabled { opacity: 0.75; cursor: not-allowed; }
+.pf-dash .pf-chip--active { background: #1a1d21; color: #fff; border-color: #1a1d21; }
+.pf-dash .pf-chip--active:disabled { opacity: 1; }
+.pf-dash .pf-chip__val { background: rgba(255,255,255,0.18); padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+
+.pf-dash .pf-sort { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.pf-dash .pf-sort label { font-size: 13px; color: #6b7280; margin: 0; }
+.pf-dash .pf-select-wrap { position: relative; }
+.pf-dash .pf-select-wrap select {
+    appearance: none; -webkit-appearance: none;
+    padding: 7px 32px 7px 14px; border-radius: 10px; border: 1px solid #e5e7eb;
+    background: #fff; color: #1a1d21; font-size: 13px; font-weight: 500; cursor: pointer;
+    min-width: 150px;
 }
-.pf-badge-popup__expiry label { margin-bottom: 2px; color: #666; }
-.pf-badge-popup__expiry .gap-2 { gap: 8px; }
-.pf-badge-lifetime { white-space: nowrap; cursor: pointer; }
+.pf-dash .pf-select-wrap select:focus { outline: none; border-color: #1a1d21; }
+.pf-dash .pf-select-wrap svg { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #6b7280; pointer-events: none; }
+
+/* ====== Banner (amber custom-order notice) ====== */
+.pf-dash .pf-banner {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0 26px 0; padding: 12px 16px;
+    background: #fef7e6; border: 1px solid #f5dea3; border-radius: 12px;
+    color: #8a5a00; font-size: 13px;
+    max-height: 80px; overflow: hidden;
+    transition: max-height 0.25s, opacity 0.2s, padding 0.25s, margin-bottom 0.25s, border-width 0.25s;
+    margin-bottom: 16px;
+}
+.pf-dash .pf-banner.is-hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border-width: 0; margin-bottom: 0; }
+.pf-dash .pf-banner svg { color: #d97706; flex-shrink: 0; }
+.pf-dash .pf-banner__save-slot { margin-left: auto; }
+.pf-dash .pf-save-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    color: #1a1d21; background: #fff; border: 1px solid #d97706;
+    padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    text-decoration: none; transition: background 0.15s, transform 0.05s, opacity 0.4s;
+}
+.pf-dash .pf-save-link:hover { background: #fffbeb; text-decoration: none; color: #1a1d21; }
+.pf-dash .pf-save-link:active { transform: translateY(1px); }
+.pf-dash .pf-save-link.is-saved { background: #dcfce7; border-color: #22c55e; color: #166534; }
+
+/* ====== Table ====== */
+.pf-dash .pf-table-wrap { padding: 8px 16px 0; }
+.pf-dash .pf-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+.pf-dash .pf-table thead th {
+    padding: 10px 12px; text-align: left;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: #9ca3af;
+    text-transform: uppercase; border-bottom: 1px solid #f1f2f4; background: transparent;
+}
+.pf-dash .pf-table thead th.pf-th-pos { width: 82px; padding-left: 34px; }
+.pf-dash .pf-table thead th.pf-th-check { width: 32px; }
+.pf-dash .pf-table thead th.pf-th-id { width: 60px; }
+.pf-dash .pf-table thead th.pf-th-price { width: 80px; }
+.pf-dash .pf-table thead th.pf-th-actions { text-align: right; padding-right: 18px; width: 200px; }
+
+.pf-dash .pf-table tbody tr { transition: background 0.15s; }
+.pf-dash .pf-table tbody tr:hover { background: #fafafa; }
+.pf-dash .pf-table tbody td { padding: 12px; border-bottom: 1px solid #f4f5f7; vertical-align: middle; }
+
+/* Position column */
+.pf-dash .pf-td-pos { display: flex; align-items: center; gap: 4px; padding-left: 12px; padding-right: 4px; }
+.pf-dash .pf-grip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 28px; color: #d1d5db; cursor: grab; flex-shrink: 0;
+    transition: color 0.15s;
+}
+.pf-dash .pf-grip:hover { color: #6b7280; }
+.pf-dash .pf-grip:active { cursor: grabbing; }
+#productfeed-table.pf-locked .pf-grip { cursor: not-allowed; color: #e5e7eb; }
+.pf-dash .pf-pos-input {
+    width: 40px; height: 28px; padding: 0;
+    border: 1px solid #e5e7eb; border-radius: 7px;
+    text-align: center; font-size: 13px; font-weight: 500; color: #1a1d21;
+    background: #fff; -moz-appearance: textfield;
+    transition: border-color 0.15s, background 0.15s;
+}
+.pf-dash .pf-pos-input:focus { outline: none; border-color: #1a1d21; background: #fff; }
+.pf-dash .pf-pos-input::-webkit-outer-spin-button,
+.pf-dash .pf-pos-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pf-dash .pf-pos-input:disabled { opacity: 0.4; background: #f9fafb; cursor: not-allowed; }
+
+/* Checkbox */
+.pf-dash .pf-table input[type="checkbox"] { width: 15px; height: 15px; accent-color: #1a1d21; cursor: pointer; margin: 0; }
+
+/* ID */
+.pf-dash .pf-td-id { color: #6b7280; font-size: 12px; font-family: "SF Mono", Menlo, monospace; }
+
+/* Product cell */
+.pf-dash .pf-td-product { display: flex; align-items: center; gap: 12px; min-width: 320px; }
+.pf-dash .pf-thumb { width: 38px; height: 38px; border-radius: 7px; object-fit: cover; flex-shrink: 0; background: #f4f5f7; }
+.pf-dash .pf-thumb--empty { background: linear-gradient(135deg, #f4f5f7, #e9eaec); }
+.pf-dash .pf-td-product__text { min-width: 0; }
+.pf-dash .pf-product-name { font-weight: 600; color: #1a1d21; font-size: 13px; line-height: 1.3; }
+.pf-dash .pf-product-sub { color: #9ca3af; font-size: 12px; margin-top: 2px; }
+
+/* Category pill */
+.pf-dash .pf-cat-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: hsl(var(--h, 210), 70%, 96%); color: hsl(var(--h, 210), 35%, 30%);
+    font-size: 12px; font-weight: 500;
+}
+.pf-dash .pf-cat-dot { width: 6px; height: 6px; border-radius: 50%; background: hsl(var(--h, 210), 65%, 50%); }
+
+/* Price */
+.pf-dash .pf-td-price { font-weight: 600; color: #1a1d21; }
+
+/* Date */
+.pf-dash .pf-td-date { color: #374151; font-size: 13px; }
+.pf-dash .pf-td-date__ago { color: #9ca3af; font-size: 11px; margin-top: 2px; }
+
+/* Actions (squared buttons with solid colors when active) */
+.pf-dash .pf-td-actions { text-align: right; padding-right: 18px; }
+.pf-dash .pf-td-actions .pf-badge-wrap { display: inline-block; }
+.pf-dash .pf-act {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+    cursor: pointer; margin-left: 4px; transition: all 0.15s;
+}
+.pf-dash .pf-act:hover { border-color: #1a1d21; color: #1a1d21; background: #fafafa; }
+.pf-dash .pf-act:active { transform: translateY(1px); }
+.pf-dash .pf-act--push { background: #fef1ed; border-color: #f6b89b; color: #b8440c; }
+.pf-dash .pf-act--push:hover { background: #fdd5c3; border-color: #e08451; color: #8a3208; }
+.pf-dash .pf-act--push.pf-pushed-flash { animation: pf-push-flash 0.6s ease; }
+@keyframes pf-push-flash { 0% { transform: scale(1); } 40% { transform: scale(1.2); background: #f97316; color: #fff; } 100% { transform: scale(1); } }
+.pf-dash .pf-act--visible.is-on { background: #dcfce7; border-color: #86efac; color: #166534; }
+.pf-dash .pf-act--visible.is-on:hover { background: #bbf7d0; border-color: #4ade80; color: #14532d; }
+.pf-dash .pf-act--pin.is-on { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+.pf-dash .pf-act--pin.is-on:hover { background: #fde68a; border-color: #fbbf24; color: #78350f; }
+.pf-dash .pf-act--badge.is-on { background: #1a1d21; border-color: #1a1d21; color: #fff; }
+.pf-dash .pf-act--badge.is-on:hover { background: #2d3137; color: #fff; }
+.pf-dash .pf-act--badge.is-expired { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+
+/* Sortable drag state */
+.pf-dash .pf-drag-ghost { opacity: 0.4; background: #fef7e6 !important; }
+.pf-dash .pf-drag-chosen { background: #fafafa !important; }
+.pf-dash .pf-drag-dragging { background: #fff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+/* Empty */
+.pf-dash .pf-empty { text-align: center; padding: 40px; color: #9ca3af; font-style: italic; }
+
+/* Footer / pagination */
+.pf-dash .pf-foot { display: flex; justify-content: space-between; align-items: center; padding: 18px 26px; }
+.pf-dash .pf-foot__info { color: #6b7280; font-size: 13px; }
+.pf-dash .pf-pager { display: inline-flex; gap: 4px; align-items: center; }
+.pf-dash .pf-pager__btn {
+    min-width: 32px; height: 32px; padding: 0 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; color: #374151;
+    font-size: 13px; font-weight: 500; text-decoration: none; transition: all 0.15s;
+}
+.pf-dash .pf-pager__btn:hover:not(.is-disabled):not(.is-active) { border-color: #1a1d21; color: #1a1d21; text-decoration: none; }
+.pf-dash .pf-pager__btn.is-active { background: #1a1d21; border-color: #1a1d21; color: #fff; }
+.pf-dash .pf-pager__btn.is-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.pf-dash .pf-pager__ellip { padding: 0 4px; color: #9ca3af; }
+
+/* ====== Badge popup ====== */
+.pf-badge-popup { position: fixed; z-index: 10000; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); width: 300px; overflow: hidden; font-size: 13px; }
+.pf-badge-popup__header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f1f2f4; background: #fafafa; }
+.pf-badge-popup__header strong { font-size: 14px; color: #1a1d21; }
+.pf-badge-popup__close { border: 0; background: none; font-size: 22px; cursor: pointer; color: #9ca3af; line-height: 1; padding: 0; }
+.pf-badge-popup__presets { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 16px 10px; }
+.pf-badge-preset { padding: 5px 12px; border: 1px solid #e5e7eb; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 500; color: #374151; cursor: pointer; transition: all 0.15s; }
+.pf-badge-preset:hover, .pf-badge-preset.active { background: #1a1d21; color: #fff; border-color: #1a1d21; }
+.pf-badge-popup__form { padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.pf-badge-popup__form input[type="text"], .pf-badge-popup__form input[type="date"] { width: 100%; padding: 7px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #1a1d21; }
+.pf-badge-popup__form input:focus { outline: none; border-color: #1a1d21; }
+.pf-badge-popup__expiry label { color: #6b7280; margin-bottom: 4px; display: block; }
+.pf-badge-popup__row { display: flex; align-items: center; gap: 10px; }
+.pf-badge-popup__row input[type="date"] { flex: 1; }
+.pf-badge-lifetime { white-space: nowrap; cursor: pointer; color: #374151; display: inline-flex; align-items: center; gap: 4px; margin: 0; }
 .pf-badge-popup__actions { display: flex; gap: 8px; margin-top: 4px; }
-.pf-badge-popup__actions .btn { flex: 1; }
+.pf-badge-popup__actions button { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #1a1d21; background: #1a1d21; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.pf-badge-popup__actions button:hover { background: #2d3137; }
+.pf-badge-popup__actions .pf-badge-popup__remove { background: #fff; color: #dc2626; border-color: #fecaca; }
+.pf-badge-popup__actions .pf-badge-popup__remove:hover { background: #fef2f2; border-color: #f87171; }
 </style>
 
+<link rel="stylesheet" href="{{ cdd_css_url }}">
+<script src="{{ cdd_js_url }}"></script>
+<script src="{{ sortable_js_url }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     var toggleUrl = '{{ toggle_url }}';
     var badgeUrl = '{{ badge_url }}';
+    var pushUrl = '{{ push_url }}';
+    var reorderUrl = '{{ reorder_url }}';
+    var listUrl = '{{ path('admin_productfeed_list') }}';
     var popup = document.getElementById('pf-badge-popup');
     var badgeText = document.getElementById('pf-badge-text');
     var badgeExpires = document.getElementById('pf-badge-expires');
     var badgeLifetime = document.getElementById('pf-badge-lifetime');
     var currentBadgeTrigger = null;
 
-    // Toggle buttons (active / sticky)
-    document.querySelectorAll('.pf-toggle-btn:not(.pf-badge-trigger)').forEach(function(btn) {
+    // ============ Relative time under dates ============
+    function humanAgo(ts) {
+        var diff = Math.floor(Date.now() / 1000) - ts;
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+        if (diff < 31536000) return Math.floor(diff / 2592000) + 'mo ago';
+        return Math.floor(diff / 31536000) + 'y ago';
+    }
+    document.querySelectorAll('.pf-td-date__ago').forEach(function(el) {
+        var ts = parseInt(el.dataset.ts, 10);
+        if (ts > 0) el.textContent = humanAgo(ts);
+    });
+
+    // ============ Toggle buttons (visible / pinned) ============
+    document.querySelectorAll('.pf-act[data-field]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var button = this;
-            button.disabled = true;
+            var b = this;
+            b.disabled = true;
             fetch(toggleUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                body: 'id_product=' + button.dataset.id + '&field=' + button.dataset.field
+                body: 'id_product=' + b.dataset.id + '&field=' + b.dataset.field
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data.success) {
                     var isOn = data.new_value === 1;
-                    var f = button.dataset.field;
-                    if (f === 'is_active') {
-                        button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-success' : 'btn-outline-secondary');
-                        button.innerHTML = '<i class="material-icons">' + (isOn ? 'visibility' : 'visibility_off') + '</i>';
-                        button.title = isOn ? 'Active' : 'Hidden';
-                    } else if (f === 'is_sticky') {
-                        button.className = 'btn btn-sm pf-toggle-btn ' + (isOn ? 'btn-warning' : 'btn-outline-secondary');
-                        button.innerHTML = '<i class="material-icons">' + (isOn ? 'push_pin' : 'outlined_flag') + '</i>';
-                        button.title = isOn ? 'Pinned' : 'Not pinned';
+                    b.classList.toggle('is-on', isOn);
+                    if (b.dataset.field === 'is_active') {
+                        b.innerHTML = isOn
+                            ? '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+                            : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+                        b.title = isOn ? 'Visible' : 'Hidden';
+                    } else if (b.dataset.field === 'is_sticky') {
+                        b.title = isOn ? 'Pinned' : 'Not pinned';
                     }
                 }
-                button.disabled = false;
+                b.disabled = false;
             })
-            .catch(function() { button.disabled = false; });
+            .catch(function() { b.disabled = false; });
         });
     });
 
-    // Badge popup — open
+    // ============ Push button ============
+    document.querySelectorAll('.pf-act--push').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var b = this;
+            b.disabled = true;
+            fetch(pushUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: 'id_product=' + encodeURIComponent(b.dataset.id)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                b.disabled = false;
+                if (!data.success) return;
+                b.classList.add('pf-pushed-flash');
+                setTimeout(function() { window.location.href = listUrl; }, 500);
+            })
+            .catch(function() { b.disabled = false; });
+        });
+    });
+
+    // ============ Badge popup ============
     document.querySelectorAll('.pf-badge-trigger').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             currentBadgeTrigger = this;
             var rect = this.getBoundingClientRect();
-            popup.style.top = (rect.bottom + 6) + 'px';
-            popup.style.left = Math.min(rect.left, window.innerWidth - 300) + 'px';
+
+            // Show first so we can measure, then flip above if it would overflow
+            popup.style.visibility = 'hidden';
             popup.style.display = 'block';
+            var popupH = popup.offsetHeight || 320;
+            var popupW = popup.offsetWidth || 300;
+            var spaceBelow = window.innerHeight - rect.bottom;
+            var spaceAbove = rect.top;
+            var flipUp = spaceBelow < popupH + 12 && spaceAbove > spaceBelow;
+
+            popup.style.top = (flipUp ? (rect.top - popupH - 6) : (rect.bottom + 6)) + 'px';
+            popup.style.left = Math.max(10, Math.min(rect.left - (popupW - rect.width), window.innerWidth - popupW - 10)) + 'px';
+            popup.style.visibility = '';
 
             badgeText.value = this.dataset.badgeText || '';
             badgeExpires.value = this.dataset.badgeExpires || '';
             badgeLifetime.checked = !this.dataset.badgeExpires && !!this.dataset.badgeText;
             badgeExpires.disabled = badgeLifetime.checked;
-
-            // Highlight matching preset
             document.querySelectorAll('.pf-badge-preset').forEach(function(p) {
                 p.classList.toggle('active', p.dataset.text === badgeText.value);
             });
         });
     });
-
-    // Badge popup — close
     document.getElementById('pf-badge-close').addEventListener('click', function() { popup.style.display = 'none'; });
     document.addEventListener('click', function(e) {
         if (!popup.contains(e.target) && !e.target.closest('.pf-badge-trigger')) popup.style.display = 'none';
     });
-
-    // Presets
     document.querySelectorAll('.pf-badge-preset').forEach(function(btn) {
         btn.addEventListener('click', function() {
             badgeText.value = this.dataset.text;
@@ -315,20 +610,15 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('active');
         });
     });
-
-    // Lifetime checkbox
     badgeLifetime.addEventListener('change', function() {
         badgeExpires.disabled = this.checked;
         if (this.checked) badgeExpires.value = '';
     });
-
-    // Save badge
     document.getElementById('pf-badge-save').addEventListener('click', function() {
         if (!currentBadgeTrigger || !badgeText.value.trim()) return;
         var id = currentBadgeTrigger.dataset.id;
         var body = 'id_product=' + id + '&badge_action=set&badge_text=' + encodeURIComponent(badgeText.value.trim());
         if (badgeExpires.value) body += '&badge_expires=' + badgeExpires.value;
-
         fetch(badgeUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
@@ -339,19 +629,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 currentBadgeTrigger.dataset.badgeText = data.badge_text;
                 currentBadgeTrigger.dataset.badgeExpires = data.badge_expires;
-                currentBadgeTrigger.className = 'btn btn-sm pf-toggle-btn pf-badge-trigger btn-info';
-                currentBadgeTrigger.innerHTML = '<i class="material-icons">label</i>';
-                currentBadgeTrigger.title = data.badge_text;
+                var isExpired = data.badge_expires && new Date(data.badge_expires + 'T23:59:59') < new Date();
+                currentBadgeTrigger.classList.remove('is-on', 'is-expired');
+                currentBadgeTrigger.classList.add(isExpired ? 'is-expired' : 'is-on');
+                currentBadgeTrigger.title = isExpired ? 'Expired: ' + data.badge_text : data.badge_text;
                 popup.style.display = 'none';
             }
         });
     });
-
-    // Remove badge
     document.getElementById('pf-badge-remove').addEventListener('click', function() {
         if (!currentBadgeTrigger) return;
         var id = currentBadgeTrigger.dataset.id;
-
         fetch(badgeUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
@@ -362,13 +650,146 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 currentBadgeTrigger.dataset.badgeText = '';
                 currentBadgeTrigger.dataset.badgeExpires = '';
-                currentBadgeTrigger.className = 'btn btn-sm pf-toggle-btn pf-badge-trigger btn-outline-secondary';
-                currentBadgeTrigger.innerHTML = '<i class="material-icons">label_off</i>';
+                currentBadgeTrigger.classList.remove('is-on', 'is-expired');
                 currentBadgeTrigger.title = 'No badge';
                 popup.style.display = 'none';
             }
         });
     });
+
+    // ============ Reorder UX ============
+    var table = document.getElementById('productfeed-table');
+    var tbody = document.getElementById('pf-tbody');
+    var banner = document.getElementById('pf-banner');
+    var saveLink = document.getElementById('pf-save-order');
+    var sortSelect = document.getElementById('pf-sort-select');
+    var sortable = null;
+    var dirty = false;
+    var initialIds = collectIds();
+
+    function collectIds() {
+        return Array.from(tbody.querySelectorAll('tr[data-id]')).map(function(tr) { return tr.dataset.id; });
+    }
+    function reindex() {
+        tbody.querySelectorAll('tr[data-id]').forEach(function(row, i) {
+            var input = row.querySelector('.pf-pos-input');
+            if (input) input.value = i + 1;
+        });
+    }
+    function checkDirty() {
+        var current = collectIds();
+        dirty = current.length !== initialIds.length || current.some(function(id, i) { return id !== initialIds[i]; });
+        saveLink.style.display = dirty ? 'inline-flex' : 'none';
+        saveLink.classList.remove('is-saved');
+        saveLink.textContent = 'Save order';
+    }
+    function enableDrag() {
+        if (sortable || typeof Sortable === 'undefined') return;
+        sortable = Sortable.create(tbody, {
+            handle: '.pf-grip', animation: 150,
+            ghostClass: 'pf-drag-ghost', chosenClass: 'pf-drag-chosen', dragClass: 'pf-drag-dragging',
+            onEnd: function() { reindex(); checkDirty(); }
+        });
+        table.classList.remove('pf-locked');
+    }
+    function disableDrag() {
+        if (sortable) { sortable.destroy(); sortable = null; }
+        table.classList.add('pf-locked');
+    }
+
+    // Manual position input
+    tbody.querySelectorAll('.pf-pos-input').forEach(function(input) {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+        });
+        input.addEventListener('change', function() {
+            var val = parseInt(this.value, 10);
+            if (isNaN(val) || val < 1) { reindex(); return; }
+            var row = this.closest('tr');
+            var rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+            var targetIdx = Math.min(val - 1, rows.length - 1);
+            var currentIdx = rows.indexOf(row);
+            if (targetIdx === currentIdx) { reindex(); return; }
+            rows.splice(currentIdx, 1);
+            rows.splice(targetIdx, 0, row);
+            rows.forEach(function(r) { tbody.appendChild(r); });
+            reindex();
+            checkDirty();
+        });
+    });
+
+    // Sort dropdown switches between custom-order (drag) and other (locked)
+    sortSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            banner.classList.remove('is-hidden');
+            tbody.querySelectorAll('.pf-pos-input').forEach(function(i) { i.disabled = false; });
+            enableDrag();
+        } else {
+            banner.classList.add('is-hidden');
+            tbody.querySelectorAll('.pf-pos-input').forEach(function(i) { i.disabled = true; });
+            disableDrag();
+        }
+    });
+
+    // Save order
+    saveLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!dirty || saveLink.classList.contains('is-saved')) return;
+        var ids = collectIds();
+        var body = ids.map(function(id) { return 'ids[]=' + encodeURIComponent(id); }).join('&');
+        saveLink.style.pointerEvents = 'none';
+        saveLink.textContent = 'Saving…';
+        fetch(reorderUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: body
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            saveLink.style.pointerEvents = '';
+            if (data.success) {
+                saveLink.classList.add('is-saved');
+                saveLink.textContent = '✓ Saved';
+                initialIds = collectIds();
+                dirty = false;
+                setTimeout(function() {
+                    saveLink.style.opacity = '0';
+                    setTimeout(function() { saveLink.style.display = 'none'; saveLink.style.opacity = ''; }, 400);
+                }, 1400);
+            } else {
+                saveLink.textContent = 'Retry';
+                alert('Reorder failed: ' + (data.message || 'unknown error'));
+            }
+        })
+        .catch(function() { saveLink.style.pointerEvents = ''; saveLink.textContent = 'Retry'; });
+    });
+
+    // ============ Export (decorative for now) ============
+    var exportBtn = document.getElementById('pf-export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            // Build a simple CSV of current page rows
+            var rows = [['ID','Product','Category','Price','Created','Pushed']];
+            tbody.querySelectorAll('tr[data-id]').forEach(function(tr) {
+                var id = tr.dataset.id;
+                var name = (tr.querySelector('.pf-product-name') || {}).textContent || '';
+                var cat = (tr.querySelector('.pf-cat-pill') || {}).textContent || '';
+                var price = (tr.querySelector('.pf-td-price') || {}).textContent || '';
+                var dates = tr.querySelectorAll('.pf-td-date > div:first-child');
+                rows.push([id, name.trim(), cat.trim(), price.trim(), dates[0] ? dates[0].textContent : '', dates[1] ? dates[1].textContent : '']);
+            });
+            var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'productfeed-' + new Date().toISOString().slice(0, 10) + '.csv';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        });
+    }
+
+    // Start in custom-order mode
+    enableDrag();
+    reindex();
 });
 </script>
 {% endblock %}
