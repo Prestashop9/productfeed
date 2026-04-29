@@ -28,11 +28,39 @@ class ProductFeedRepository
     {
         $db = Db::getInstance();
         $table = _DB_PREFIX_ . 'productfeed';
+
+        $tableExists = (bool) $db->getValue(
+            'SELECT COUNT(*)
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            AND table_name = "' . pSQL($table) . '"'
+        );
+        if (!$tableExists) {
+            $this->installSchema();
+        }
+
         $cols = $db->executeS('SHOW COLUMNS FROM `' . $table . '` LIKE "pushed_at"');
         if (empty($cols)) {
             $db->execute('ALTER TABLE `' . $table . '` ADD COLUMN `pushed_at` DATETIME NOT NULL AFTER `badge_expires`');
             $db->execute('UPDATE `' . $table . '` SET `pushed_at` = `date_add`');
             $db->execute('ALTER TABLE `' . $table . '` ADD INDEX `idx_pushed_at` (`pushed_at`)');
+        }
+    }
+
+    private function installSchema(): void
+    {
+        $sql = file_get_contents(_PS_MODULE_DIR_ . 'productfeed/sql/install.sql');
+        if (!$sql) {
+            return;
+        }
+
+        $sql = str_replace('PREFIX_', _DB_PREFIX_, $sql);
+        $queries = preg_split('/;\s*[\r\n]+/', trim($sql));
+        foreach ($queries as $query) {
+            $query = trim($query);
+            if ($query !== '') {
+                Db::getInstance()->execute($query);
+            }
         }
     }
 

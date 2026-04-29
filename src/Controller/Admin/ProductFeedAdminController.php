@@ -49,7 +49,11 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
                 $product['image_url'] = '';
             }
 
-            $product['formatted_price'] = $locale->formatPrice(
+            $product['formatted_base_price'] = $locale->formatPrice(
+                (float) $product['price'],
+                $currencyIso
+            );
+            $product['formatted_final_price'] = $locale->formatPrice(
                 \Product::getPriceStatic((int) $product['id_product'], true),
                 $currencyIso
             );

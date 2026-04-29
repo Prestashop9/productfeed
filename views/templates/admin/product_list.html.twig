@@ -105,6 +105,7 @@
                         <th>PRODUCT</th>
                         <th>CATEGORY</th>
                         <th class="pf-th-price">PRICE</th>
+                        <th class="pf-th-price">FINAL PRICE</th>
                         <th>CREATED</th>
                         <th>PUSHED</th>
                         <th class="pf-th-actions">ACTIONS</th>
@@ -117,10 +118,12 @@
                     {% set cat_hue = (product.id_category|default(0) * 137) % 360 %}
                     <tr data-id="{{ product.id_product }}">
                         <td class="pf-td-pos">
-                            <span class="pf-grip" title="Drag to reorder">
-                                <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><circle cx="7" cy="4" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="7" cy="10" r="1.5"/><circle cx="13" cy="10" r="1.5"/><circle cx="7" cy="16" r="1.5"/><circle cx="13" cy="16" r="1.5"/></svg>
-                            </span>
-                            <input type="number" class="pf-pos-input" min="1" step="1" data-id="{{ product.id_product }}">
+                            <div class="pf-pos-cell">
+                                <span class="pf-grip" title="Drag to reorder">
+                                    <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor"><circle cx="7" cy="4" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="7" cy="10" r="1.5"/><circle cx="13" cy="10" r="1.5"/><circle cx="7" cy="16" r="1.5"/><circle cx="13" cy="16" r="1.5"/></svg>
+                                </span>
+                                <input type="number" class="pf-pos-input" min="1" step="1" data-id="{{ product.id_product }}">
+                            </div>
                         </td>
                         <td><input type="checkbox" class="pf-row-check" data-id="{{ product.id_product }}"></td>
                         <td class="pf-td-id">#{{ product.id_product }}</td>
@@ -142,7 +145,8 @@
                             </span>
                             {% endif %}
                         </td>
-                        <td class="pf-td-price">${{ product.price|number_format(2, '.', ',') }}</td>
+                        <td class="pf-td-price">{{ product.formatted_base_price }}</td>
+                        <td class="pf-td-price pf-td-price--final">{{ product.formatted_final_price }}</td>
                         <td class="pf-td-date">
                             <div>{{ product.product_date_add|date('Y-m-d') }}</div>
                             <div class="pf-td-date__ago" data-ts="{{ product.product_date_add|date('U') }}"></div>
@@ -177,7 +181,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="9" class="pf-empty">No products found.</td></tr>
+                    <tr><td colspan="10" class="pf-empty">No products found.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -361,7 +365,7 @@
 .pf-dash .pf-table thead th.pf-th-pos { width: 82px; padding-left: 34px; }
 .pf-dash .pf-table thead th.pf-th-check { width: 32px; }
 .pf-dash .pf-table thead th.pf-th-id { width: 60px; }
-.pf-dash .pf-table thead th.pf-th-price { width: 80px; }
+.pf-dash .pf-table thead th.pf-th-price { width: 96px; }
 .pf-dash .pf-table thead th.pf-th-actions { text-align: right; padding-right: 18px; width: 200px; }
 
 .pf-dash .pf-table tbody tr { transition: background 0.15s; }
@@ -369,7 +373,8 @@
 .pf-dash .pf-table tbody td { padding: 12px; border-bottom: 1px solid #f4f5f7; vertical-align: middle; }
 
 /* Position column */
-.pf-dash .pf-td-pos { display: flex; align-items: center; gap: 4px; padding-left: 12px; padding-right: 4px; }
+.pf-dash .pf-td-pos { width: 82px; padding-left: 12px; padding-right: 4px; }
+.pf-dash .pf-pos-cell { display: flex; align-items: center; gap: 4px; min-height: 38px; line-height: 1; }
 .pf-dash .pf-grip {
     display: inline-flex; align-items: center; justify-content: center;
     width: 18px; height: 28px; color: #d1d5db; cursor: grab; flex-shrink: 0;
@@ -415,6 +420,7 @@
 
 /* Price */
 .pf-dash .pf-td-price { font-weight: 600; color: #1a1d21; }
+.pf-dash .pf-td-price--final { color: #0f172a; }
 
 /* Date */
 .pf-dash .pf-td-date { color: #374151; font-size: 13px; }
@@ -769,14 +775,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (exportBtn) {
         exportBtn.addEventListener('click', function() {
             // Build a simple CSV of current page rows
-            var rows = [['ID','Product','Category','Price','Created','Pushed']];
+            var rows = [['ID','Product','Category','Price','Final price','Created','Pushed']];
             tbody.querySelectorAll('tr[data-id]').forEach(function(tr) {
                 var id = tr.dataset.id;
                 var name = (tr.querySelector('.pf-product-name') || {}).textContent || '';
                 var cat = (tr.querySelector('.pf-cat-pill') || {}).textContent || '';
-                var price = (tr.querySelector('.pf-td-price') || {}).textContent || '';
+                var prices = tr.querySelectorAll('.pf-td-price');
+                var price = prices[0] ? prices[0].textContent : '';
+                var finalPrice = prices[1] ? prices[1].textContent : '';
                 var dates = tr.querySelectorAll('.pf-td-date > div:first-child');
-                rows.push([id, name.trim(), cat.trim(), price.trim(), dates[0] ? dates[0].textContent : '', dates[1] ? dates[1].textContent : '']);
+                rows.push([id, name.trim(), cat.trim(), price.trim(), finalPrice.trim(), dates[0] ? dates[0].textContent : '', dates[1] ? dates[1].textContent : '']);
             });
             var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
             var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });

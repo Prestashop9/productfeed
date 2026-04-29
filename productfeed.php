@@ -14,6 +14,7 @@ class ProductFeed extends Module
 {
     const HOOKS = [
         'displayHeader',
+        'displayBackOfficeHeader',
         'moduleRoutes',
         'actionProductSave',
         'actionObjectProductDeleteAfter',
@@ -35,7 +36,7 @@ class ProductFeed extends Module
     {
         $this->name = 'productfeed';
         $this->tab = 'front_office_features';
-        $this->version = '1.0.0';
+        $this->version = '1.0.2';
         $this->author = 'PrestashopMD';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => _PS_VERSION_];
@@ -66,38 +67,87 @@ class ProductFeed extends Module
 
     private function installDb(): bool
     {
-        $sql = file_get_contents(__DIR__ . '/sql/install.sql');
-        if ($sql) {
-            $sql = str_replace('PREFIX_', _DB_PREFIX_, $sql);
-            return (bool) Db::getInstance()->execute($sql);
+        return $this->ensureDatabase();
+    }
+
+    public function ensureDatabase(): bool
+    {
+        return $this->executeSqlFile(__DIR__ . '/sql/install.sql');
+    }
+
+    private function executeSqlFile(string $path): bool
+    {
+        $sql = file_get_contents($path);
+        if (!$sql) {
+            return true;
         }
+
+        $sql = str_replace('PREFIX_', _DB_PREFIX_, $sql);
+        $queries = preg_split('/;\s*[\r\n]+/', trim($sql));
+        foreach ($queries as $query) {
+            $query = trim($query);
+            if ($query !== '' && !Db::getInstance()->execute($query)) {
+                return false;
+            }
+        }
+
         return true;
     }
 
     private function uninstallDb(): bool
     {
-        $sql = file_get_contents(__DIR__ . '/sql/uninstall.sql');
-        if ($sql) {
-            $sql = str_replace('PREFIX_', _DB_PREFIX_, $sql);
-            return (bool) Db::getInstance()->execute($sql);
-        }
-        return true;
+        return $this->executeSqlFile(__DIR__ . '/sql/uninstall.sql');
     }
 
     private function installTab(): bool
     {
+        return $this->ensureAdminTab();
+    }
+
+    public function ensureAdminTab(): bool
+    {
+        static $checked = false;
+        if ($checked) {
+            return true;
+        }
+        $checked = true;
+
+        $idTab = (int) Tab::getIdFromClassName('AdminProductFeed');
         $tab = new Tab();
+        if ($idTab > 0) {
+            $tab = new Tab($idTab);
+        }
+
+        $feedName = Configuration::get('PRODUCTFEED_PAGE_TITLE') ?: 'Feed';
+        $idParent = (int) Tab::getIdFromClassName('AdminCatalog');
+
+        $needsUpdate = $idTab <= 0
+            || (int) $tab->active !== 1
+            || $tab->route_name !== 'admin_productfeed_list'
+            || $tab->module !== $this->name
+            || ($idParent > 0 && (int) $tab->id_parent !== $idParent);
+
         $tab->active = 1;
         $tab->class_name = 'AdminProductFeed';
         $tab->route_name = 'admin_productfeed_list';
-        $tab->name = [];
-        foreach (Language::getLanguages(true) as $lang) {
-            $tab->name[$lang['id_lang']] = 'Product Feed';
-        }
-        $tab->id_parent = (int) Tab::getIdFromClassName('AdminCatalog');
         $tab->module = $this->name;
+        if ($idParent > 0) {
+            $tab->id_parent = $idParent;
+        }
 
-        return $tab->add();
+        foreach (Language::getLanguages(true) as $lang) {
+            $idLang = (int) $lang['id_lang'];
+            if (($tab->name[$idLang] ?? '') !== $feedName) {
+                $tab->name[$idLang] = $feedName;
+                $needsUpdate = true;
+            }
+        }
+
+        if (!$needsUpdate) {
+            return true;
+        }
+
+        return $idTab > 0 ? (bool) $tab->update() : (bool) $tab->add();
     }
 
     private function uninstallTab(): bool
@@ -148,6 +198,16 @@ class ProductFeed extends Module
      */
     public function hookDisplayHeader(array $params): string
     {
+        return '';
+    }
+
+    /**
+     * Keep the Catalog menu entry present on existing installs.
+     */
+    public function hookDisplayBackOfficeHeader(array $params): string
+    {
+        $this->ensureAdminTab();
+
         return '';
     }
 
