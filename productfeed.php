@@ -36,7 +36,7 @@ class ProductFeed extends Module
     {
         $this->name = 'productfeed';
         $this->tab = 'front_office_features';
-        $this->version = '1.0.2';
+        $this->version = '1.0.3';
         $this->author = 'PrestashopMD';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => _PS_VERSION_];
@@ -162,15 +162,39 @@ class ProductFeed extends Module
 
     private function installConfig(): bool
     {
-        Configuration::updateValue('PRODUCTFEED_PER_PAGE', 10);
-        Configuration::updateValue('PRODUCTFEED_SCROLL_TYPE', 'pagination');
-        Configuration::updateValue('PRODUCTFEED_SORT_BY', 'date_add');
-        Configuration::updateValue('PRODUCTFEED_SORT_ORDER', 'DESC');
-        Configuration::updateValue('PRODUCTFEED_SHOW_CATEGORY', 1);
-        Configuration::updateValue('PRODUCTFEED_SHOW_DATE', 1);
-        Configuration::updateValue('PRODUCTFEED_SHOW_PRICE', 1);
-        Configuration::updateValue('PRODUCTFEED_URL_SLUG', 'feed');
-        Configuration::updateValue('PRODUCTFEED_PAGE_TITLE', 'Feed');
+        return $this->ensureConfig();
+    }
+
+    public function ensureConfig(): bool
+    {
+        $defaults = [
+            'PRODUCTFEED_PER_PAGE' => 10,
+            'PRODUCTFEED_SCROLL_TYPE' => 'pagination',
+            'PRODUCTFEED_SORT_BY' => 'date_add',
+            'PRODUCTFEED_SORT_ORDER' => 'DESC',
+            'PRODUCTFEED_SHOW_CATEGORY' => 1,
+            'PRODUCTFEED_SHOW_DATE' => 1,
+            'PRODUCTFEED_SHOW_PRICE' => 1,
+            'PRODUCTFEED_URL_SLUG' => 'feed',
+            'PRODUCTFEED_PAGE_TITLE' => 'Feed',
+        ];
+
+        foreach ($defaults as $key => $value) {
+            if (Configuration::get($key) === false || Configuration::get($key) === '') {
+                Configuration::updateValue($key, $value);
+            }
+        }
+
+        return true;
+    }
+
+    public function ensureHooks(): bool
+    {
+        foreach (static::HOOKS as $hook) {
+            if (!$this->isRegisteredInHook($hook) && !$this->registerHook($hook)) {
+                return false;
+            }
+        }
 
         return true;
     }
