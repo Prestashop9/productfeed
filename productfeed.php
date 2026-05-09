@@ -36,7 +36,7 @@ class ProductFeed extends Module
     {
         $this->name = 'productfeed';
         $this->tab = 'front_office_features';
-        $this->version = '1.0.3';
+        $this->version = '1.0.4';
         $this->author = 'PrestashopMD';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => _PS_VERSION_];

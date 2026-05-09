@@ -21,7 +21,7 @@ class ProductFeedRepository
     }
 
     /**
-     * Idempotently add pushed_at column if missing (backfills from date_add).
+     * Idempotently add missing columns for existing installs.
      * Self-heals existing installs so no version bump / upgrade script required.
      */
     private function ensureSchema(): void
@@ -37,6 +37,17 @@ class ProductFeedRepository
         );
         if (!$tableExists) {
             $this->installSchema();
+        }
+
+        $positionCols = $db->executeS('SHOW COLUMNS FROM `' . $table . '` LIKE "position"');
+        if (empty($positionCols)) {
+            $db->execute('ALTER TABLE `' . $table . '` ADD COLUMN `position` INT(11) UNSIGNED NOT NULL DEFAULT 0 AFTER `id_product`');
+            $db->execute('ALTER TABLE `' . $table . '` ADD INDEX `idx_position` (`position`)');
+        }
+        $emptyPositions = (int) $db->getValue('SELECT COUNT(*) FROM `' . $table . '` WHERE `position` = 0');
+        if ($emptyPositions > 0) {
+            $db->execute('SET @productfeed_position := 0');
+            $db->execute('UPDATE `' . $table . '` SET `position` = (@productfeed_position := @productfeed_position + 1) ORDER BY `id_productfeed` ASC');
         }
 
         $cols = $db->executeS('SHOW COLUMNS FROM `' . $table . '` LIKE "pushed_at"');
@@ -114,7 +125,7 @@ class ProductFeedRepository
             $query->where('p.id_category_default = ' . $idCategory);
         }
 
-        // Sort by feed mode — sticky always comes first, then by pushed_at (freshness)
+        // Default feed order matches the storefront feed: latest pushes first.
         if ($feedSort === 'popular') {
             $query->orderBy('pf.is_sticky DESC, IFNULL(sale.quantity, 0) DESC, pf.pushed_at DESC');
         } elseif ($feedSort === 'bestselling') {
@@ -169,9 +180,19 @@ class ProductFeedRepository
         int $idShop,
         int $page = 1,
         int $perPage = 50,
-        string $search = ''
+        string $search = '',
+        string $sortBy = 'pushed',
+        string $sortOrder = 'DESC'
     ): array {
         $offset = ($page - 1) * $perPage;
+        $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+        $sortMap = [
+            'position' => 'pf.position',
+            'name' => 'pl.name',
+            'created' => 'p.date_add',
+            'pushed' => 'pf.pushed_at',
+        ];
+        $sortBy = array_key_exists($sortBy, $sortMap) ? $sortBy : 'pushed';
 
         $searchWhere = '';
         if (!empty($search)) {
@@ -181,6 +202,7 @@ class ProductFeedRepository
 
         $sql = 'SELECT
                     pf.id_productfeed,
+                    pf.position AS feed_position,
                     pf.id_product,
                     pf.is_sticky,
                     pf.is_active,
@@ -204,7 +226,7 @@ class ProductFeedRepository
                 LEFT JOIN `' . _DB_PREFIX_ . 'category_lang` cl ON cl.id_category = p.id_category_default AND cl.id_lang = ' . $idLang . ' AND cl.id_shop = ' . $idShop . '
                 LEFT JOIN `' . _DB_PREFIX_ . 'image` img ON img.id_product = p.id_product AND img.cover = 1
                 WHERE 1=1' . $searchWhere . '
-                ORDER BY pf.is_sticky DESC, pf.pushed_at DESC
+                ORDER BY ' . $sortMap[$sortBy] . ' ' . $sortOrder . ', pf.id_productfeed ASC
                 LIMIT ' . $offset . ', ' . $perPage;
 
         return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql) ?: [];
@@ -274,24 +296,21 @@ class ProductFeedRepository
     }
 
     /**
-     * Apply a manual order by stamping staggered pushed_at values.
-     * First id in $idsInOrder gets NOW, next gets NOW-1s, and so on.
-     * Any product NOT listed is untouched — it keeps its existing pushed_at.
+     * Apply a manual feed order. First id in $idsInOrder gets position 1.
+     * Any product NOT listed is untouched — it keeps its existing position.
      */
     public function bulkReorder(array $idsInOrder): bool
     {
         $db = Db::getInstance();
-        $nowTs = time();
         $success = true;
         foreach (array_values($idsInOrder) as $i => $idProduct) {
             $idProduct = (int) $idProduct;
             if ($idProduct <= 0) {
                 continue;
             }
-            $ts = date('Y-m-d H:i:s', $nowTs - $i);
             $ok = $db->update(
                 'productfeed',
-                ['pushed_at' => $ts, 'date_upd' => date('Y-m-d H:i:s')],
+                ['position' => $i + 1, 'date_upd' => date('Y-m-d H:i:s')],
                 'id_product = ' . $idProduct
             );
             $success = $success && (bool) $ok;

@@ -29,8 +29,13 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
         $page = max(1, $request->query->getInt('page', 1));
         $perPage = 50;
         $search = $request->query->get('search', '');
+        $sortBy = $request->query->get('sort', 'pushed');
+        if (!in_array($sortBy, ['position', 'name', 'created', 'pushed'], true)) {
+            $sortBy = 'pushed';
+        }
+        $sortOrder = strtoupper($request->query->get('order', 'DESC')) === 'ASC' ? 'ASC' : 'DESC';
 
-        $products = $repo->getAllProductsForAdmin($idLang, $idShop, $page, $perPage, $search);
+        $products = $repo->getAllProductsForAdmin($idLang, $idShop, $page, $perPage, $search, $sortBy, $sortOrder);
         $total = $repo->getTotalProducts($idShop, $search);
         $totalPages = max(1, (int) ceil($total / $perPage));
 
@@ -69,6 +74,8 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             'total_pages' => $totalPages,
             'total_products' => $total,
             'search' => $search,
+            'sort_by' => $sortBy,
+            'sort_order' => $sortOrder,
             'feed_name' => Configuration::get('PRODUCTFEED_PAGE_TITLE') ?: 'Feed',
             'feed_slug' => Configuration::get('PRODUCTFEED_URL_SLUG') ?: 'feed',
             'last_push_ago' => $lastPushAgo,
@@ -163,7 +170,11 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
         $context = Context::getContext();
         $successMessage = '';
 
-        if ($request->isMethod('POST')) {
+        if ($request->isMethod('POST') && $request->request->get('regenerate_api_token')) {
+            $newToken = bin2hex(random_bytes(32));
+            Configuration::updateValue('PRODUCTFEED_API_TOKEN', $newToken);
+            $successMessage = 'API token regenerated.';
+        } elseif ($request->isMethod('POST')) {
             $feedName = trim($request->request->get('PRODUCTFEED_PAGE_TITLE', 'Feed')) ?: 'Feed';
             Configuration::updateValue('PRODUCTFEED_PAGE_TITLE', $feedName);
             // Sync the admin tab name across all languages so the left-nav entry
@@ -214,6 +225,7 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
             'last_push_ago' => $lastPushAgo,
             'products_url' => $this->generateUrl('admin_productfeed_list'),
             'success_message' => $successMessage,
+            'api_token' => $this->getOrCreateApiToken(),
             'cdd_css_url' => $context->link->getMediaLink('/modules/modulenotifications/views/css/custom-dropdown.css'),
             'cdd_js_url' => $context->link->getMediaLink('/modules/modulenotifications/views/js/custom-dropdown.js'),
         ]);
@@ -223,6 +235,16 @@ class ProductFeedAdminController extends FrameworkBundleAdminController
      * Update the admin tab label for the AdminProductFeed tab across every language.
      * Called whenever the user saves a new feed name, so the left-nav menu matches.
      */
+    private function getOrCreateApiToken(): string
+    {
+        $token = Configuration::get('PRODUCTFEED_API_TOKEN');
+        if (!$token) {
+            $token = bin2hex(random_bytes(32));
+            Configuration::updateValue('PRODUCTFEED_API_TOKEN', $token);
+        }
+        return $token;
+    }
+
     private function syncAdminTabName(string $name): void
     {
         $idTab = (int) Tab::getIdFromClassName('AdminProductFeed');

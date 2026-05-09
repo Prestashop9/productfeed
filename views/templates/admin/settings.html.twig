@@ -91,7 +91,7 @@
                         </div>
                         <div class="pf-row__field">
                             <div class="pf-url-group">
-                                <span class="pf-url-group__prefix">{{ feed_base_url }}</span>
+                                <span class="pf-url-group__prefix">{{ feed_base_url|default('') }}</span>
                                 <input type="text" class="pf-input pf-url-group__slug" id="PRODUCTFEED_URL_SLUG" name="PRODUCTFEED_URL_SLUG" value="{{ settings.PRODUCTFEED_URL_SLUG }}">
                             </div>
                             <small class="pf-hint">Lowercase letters, numbers, and hyphens.</small>
@@ -207,6 +207,36 @@
                     </div>
                 </section>
 
+                {# ===== API access ===== #}
+                <section id="sec-api" class="pf-sec pf-sec--api">
+                    <h2 class="pf-sec__title">API access</h2>
+                    <p class="pf-sec__sub">Generate a private token for external tools that manage this feed.</p>
+
+                    <div class="pf-row">
+                        <div class="pf-row__label">
+                            <label for="pfApiToken">API token</label>
+                            <small>Keep this token private. Regenerating it will stop existing integrations.</small>
+                        </div>
+                        <div class="pf-row__field">
+                            <div class="pf-api-token">
+                                <code id="pfApiToken">{{ api_token|default('') }}</code>
+                                <button type="button" id="pfCopyToken" class="pf-btn pf-btn--ghost pf-api-copy">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    Copy
+                                </button>
+                            </div>
+                            <div class="pf-api-endpoint">
+                                <span>Endpoint</span>
+                                <code>{{ feed_base_url|default('') }}module/productfeed/api?action=ping</code>
+                            </div>
+                            <button type="submit" name="regenerate_api_token" value="1" class="pf-btn pf-btn--danger" onclick="return confirm('Regenerate API token? Existing integrations will stop working.')">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                Regenerate token
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
                 {# ===== Footer actions ===== #}
                 <div class="pf-sec__actions">
                     <a href="{{ path('admin_productfeed_settings') }}" class="pf-btn pf-btn--ghost">Cancel</a>
@@ -250,12 +280,16 @@
 .pf-dash .pf-btn--dark:hover { background: #2d3137; color: #fff; }
 .pf-dash .pf-btn--primary { background: #c87c3d; color: #fff; border-color: #c87c3d; }
 .pf-dash .pf-btn--primary:hover { background: #b26a2e; border-color: #b26a2e; color: #fff; }
+.pf-dash .pf-btn--danger { margin-top: 12px; color: #b42318; border-color: #fecaca; background: #fff; }
+.pf-dash .pf-btn--danger:hover { color: #991b1b; border-color: #fca5a5; background: #fff7f7; }
 
 /* Tabs */
-.pf-dash .pf-tabs { display: flex; gap: 24px; padding: 0 26px; border-bottom: 1px solid #f1f2f4; }
-.pf-dash .pf-tab { display: inline-flex; align-items: center; gap: 6px; padding: 12px 2px 14px; font-size: 14px; color: #6b7280; border-bottom: 2px solid transparent; text-decoration: none; transition: color 0.15s, border-color 0.15s; }
-.pf-dash .pf-tab:hover { color: #1a1d21; text-decoration: none; }
-.pf-dash .pf-tab--active { color: #1a1d21; border-bottom-color: #1a1d21; font-weight: 600; }
+.pf-dash .pf-tabs { display: flex; gap: 24px; padding: 0 26px; border-bottom: 0; }
+.pf-dash .pf-tab { display: inline-flex; align-items: center; gap: 6px; padding: 12px 2px 14px; font-size: 14px; color: #6b7280; border-bottom: 0 !important; text-decoration: none !important; box-shadow: none !important; transition: color 0.15s; }
+.pf-dash .pf-tab:hover,
+.pf-dash .pf-tab:focus,
+.pf-dash .pf-tab:active { color: #1a1d21; text-decoration: none !important; border-bottom: 0 !important; box-shadow: none !important; }
+.pf-dash .pf-tab--active { color: #1a1d21; border-bottom: 0 !important; text-decoration: none !important; box-shadow: none !important; font-weight: 600; }
 .pf-dash .pf-tab__count { display: inline-block; min-width: 22px; padding: 2px 7px; border-radius: 10px; background: #f1f2f4; color: #374151; font-size: 11px; font-weight: 700; text-align: center; }
 
 /* ================ Settings layout ================ */
@@ -308,6 +342,23 @@
 .pf-dash .pf-toggle input:checked + .pf-toggle__track { background: #c87c3d; }
 .pf-dash .pf-toggle input:checked + .pf-toggle__track::before { transform: translateX(20px); }
 
+/* API access */
+.pf-dash .pf-sec--api { border-top: 1px solid #f4f5f7; }
+.pf-dash .pf-api-token { display: flex; align-items: stretch; gap: 8px; max-width: 620px; }
+.pf-dash .pf-api-token code {
+    flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px;
+    background: #fafafa; color: #374151; font-family: "SF Mono", Menlo, monospace; font-size: 12px;
+    line-height: 1.45; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: all;
+}
+.pf-dash .pf-api-copy { flex-shrink: 0; }
+.pf-dash .pf-api-copy.is-copied { border-color: #86efac; color: #166534; background: #f0fdf4; }
+.pf-dash .pf-api-endpoint { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: #9ca3af; font-size: 12px; min-width: 0; }
+.pf-dash .pf-api-endpoint span { font-weight: 600; color: #6b7280; }
+.pf-dash .pf-api-endpoint code {
+    min-width: 0; max-width: 100%; padding: 4px 7px; border-radius: 6px; background: #f4f5f7;
+    color: #374151; font-family: "SF Mono", Menlo, monospace; font-size: 11px; overflow-wrap: anywhere;
+}
+
 /* Footer actions */
 .pf-dash .pf-sec__actions { display: flex; justify-content: flex-end; gap: 8px; padding: 24px 0 8px; border-top: 1px solid #f4f5f7; }
 
@@ -315,7 +366,36 @@
 @media (max-width: 900px) {
     .pf-dash .pf-settings__body { padding: 0 26px 24px; }
     .pf-dash .pf-row { grid-template-columns: 1fr; gap: 10px; }
+    .pf-dash .pf-api-token { flex-direction: column; }
+    .pf-dash .pf-api-copy { justify-content: center; }
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var copyButton = document.getElementById('pfCopyToken');
+    var tokenNode = document.getElementById('pfApiToken');
+    if (!copyButton || !tokenNode) {
+        return;
+    }
+
+    copyButton.addEventListener('click', function() {
+        var token = tokenNode.textContent.trim();
+        if (!token || !navigator.clipboard) {
+            return;
+        }
+
+        navigator.clipboard.writeText(token).then(function() {
+            var original = copyButton.innerHTML;
+            copyButton.classList.add('is-copied');
+            copyButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Copied';
+            setTimeout(function() {
+                copyButton.classList.remove('is-copied');
+                copyButton.innerHTML = original;
+            }, 1800);
+        });
+    });
+});
+</script>
 
 {% endblock %}
